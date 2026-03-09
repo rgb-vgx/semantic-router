@@ -15,6 +15,7 @@ import (
 	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/observability/metrics"
 	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/selection"
 	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/services"
+	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/startupstatus"
 )
 
 // Init starts the API server
@@ -56,11 +57,16 @@ func Init(configPath string, port int, enableSystemPromptAPI bool) error {
 	}
 
 	// Get memory store if available (set by ExtProc router during init)
-	memoryStore := initMemoryStore(5, 500*time.Millisecond)
-	if memoryStore != nil {
-		logging.Infof("Memory management API enabled")
+	var memoryStore memory.Store
+	if shouldInitMemoryStore(cfg) {
+		memoryStore = initMemoryStore(5, 500*time.Millisecond)
+		if memoryStore != nil {
+			logging.Infof("Memory management API enabled")
+		} else {
+			logging.Infof("Memory store not available, memory management API will return 503")
+		}
 	} else {
-		logging.Infof("Memory store not available, memory management API will return 503")
+		logging.Infof("Memory disabled in config, skipping memory store initialization")
 	}
 
 	// Create server instance
@@ -121,12 +127,28 @@ func initMemoryStore(maxRetries int, retryInterval time.Duration) memory.Store {
 	return nil
 }
 
+func shouldInitMemoryStore(cfg *config.RouterConfig) bool {
+	if cfg == nil {
+		return false
+	}
+	if cfg.Memory.Enabled {
+		return true
+	}
+	for _, decision := range cfg.Decisions {
+		if decision.GetPluginConfig("memory") != nil {
+			return true
+		}
+	}
+	return false
+}
+
 // setupRoutes configures all API routes
 func (s *ClassificationAPIServer) setupRoutes() *http.ServeMux {
 	mux := http.NewServeMux()
 
 	// Health check endpoint
 	mux.HandleFunc("GET /health", s.handleHealth)
+	mux.HandleFunc("GET /ready", s.handleReady)
 
 	// API discovery endpoint
 	mux.HandleFunc("GET /api/v1", s.handleAPIOverview)
@@ -207,6 +229,45 @@ func (s *ClassificationAPIServer) handleHealth(w http.ResponseWriter, _ *http.Re
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status": "healthy", "service": "classification-api"}`))
+}
+
+// handleReady reports whether router startup has completed enough for traffic.
+func (s *ClassificationAPIServer) handleReady(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	state, err := startupstatus.Load(startupstatus.StatusPathFromConfigPath(s.configPath))
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_, _ = w.Write([]byte(`{"status":"starting","service":"classification-api","ready":false}`))
+		return
+	}
+
+	if !state.Ready {
+		s.writeJSONResponse(w, http.StatusServiceUnavailable, map[string]interface{}{
+			"status":            "starting",
+			"service":           "classification-api",
+			"ready":             false,
+			"phase":             state.Phase,
+			"message":           state.Message,
+			"downloading_model": state.DownloadingModel,
+			"pending_models":    state.PendingModels,
+			"ready_models":      state.ReadyModels,
+			"total_models":      state.TotalModels,
+		})
+		return
+	}
+
+	s.writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+		"status":            "ready",
+		"service":           "classification-api",
+		"ready":             true,
+		"phase":             state.Phase,
+		"message":           state.Message,
+		"downloading_model": state.DownloadingModel,
+		"pending_models":    state.PendingModels,
+		"ready_models":      state.ReadyModels,
+		"total_models":      state.TotalModels,
+	})
 }
 
 // Helper methods for JSON handling

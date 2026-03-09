@@ -13,12 +13,11 @@ import (
 
 // --- Token ---
 
-func (h *OpenClawHandler) gatewayTokenForContainer(name string) string {
-	entry := h.findEntry(name)
-	if entry != nil && entry.Token != "" {
-		return entry.Token
+func (h *OpenClawHandler) gatewayTokenFromConfigPath(configPath string) string {
+	configPath = strings.TrimSpace(configPath)
+	if configPath == "" {
+		return ""
 	}
-	configPath := filepath.Join(h.containerDataDir(name), "openclaw.json")
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return ""
@@ -33,7 +32,36 @@ func (h *OpenClawHandler) gatewayTokenForContainer(name string) string {
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return ""
 	}
-	return cfg.Gateway.Auth.Token
+	return strings.TrimSpace(cfg.Gateway.Auth.Token)
+}
+
+func (h *OpenClawHandler) gatewayTokenForContainer(name string) string {
+	normalizedName := sanitizeContainerName(name)
+	if normalizedName == "" {
+		return ""
+	}
+
+	entry := h.findEntry(normalizedName)
+	if entry != nil && strings.TrimSpace(entry.DataDir) != "" {
+		configPath := filepath.Join(strings.TrimSpace(entry.DataDir), "openclaw.json")
+		if token := h.gatewayTokenFromConfigPath(configPath); token != "" {
+			return token
+		}
+	}
+
+	// Backward-compatible fallback path.
+	if token := h.gatewayTokenFromConfigPath(filepath.Join(h.containerDataDir(normalizedName), "openclaw.json")); token != "" {
+		return token
+	}
+
+	if entry != nil {
+		return strings.TrimSpace(entry.Token)
+	}
+	return ""
+}
+
+func (h *OpenClawHandler) GatewayTokenForContainer(name string) string {
+	return h.gatewayTokenForContainer(name)
 }
 
 func (h *OpenClawHandler) TokenHandler() http.HandlerFunc {
@@ -49,7 +77,7 @@ func (h *OpenClawHandler) TokenHandler() http.HandlerFunc {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(map[string]string{
-			"token": h.gatewayTokenForContainer(name),
+			"token": h.GatewayTokenForContainer(name),
 		}); err != nil {
 			log.Printf("openclaw: token encode error: %v", err)
 		}
@@ -58,8 +86,13 @@ func (h *OpenClawHandler) TokenHandler() http.HandlerFunc {
 
 // --- Status ---
 
-func (h *OpenClawHandler) gatewayHostCandidates() []string {
+func (h *OpenClawHandler) gatewayHostCandidates(containerName string) []string {
 	candidates := []string{}
+
+	// First priority: container name (DNS resolution within bridge network)
+	if containerName != "" {
+		candidates = append(candidates, containerName)
+	}
 
 	if explicit := strings.TrimSpace(os.Getenv("OPENCLAW_GATEWAY_HOST")); explicit != "" {
 		candidates = append(candidates, explicit)
@@ -90,8 +123,8 @@ func (h *OpenClawHandler) gatewayHostCandidates() []string {
 	return out
 }
 
-func (h *OpenClawHandler) resolveGatewayHost(port int) string {
-	candidates := h.gatewayHostCandidates()
+func (h *OpenClawHandler) resolveGatewayHost(containerName string, port int) string {
+	candidates := h.gatewayHostCandidates(containerName)
 	if len(candidates) == 0 {
 		return "127.0.0.1"
 	}
@@ -103,14 +136,14 @@ func (h *OpenClawHandler) resolveGatewayHost(port int) string {
 	return candidates[0]
 }
 
-func (h *OpenClawHandler) gatewayBaseURL(port int) string {
-	host := h.resolveGatewayHost(port)
+func (h *OpenClawHandler) gatewayBaseURL(containerName string, port int) string {
+	host := h.resolveGatewayHost(containerName, port)
 	return fmt.Sprintf("http://%s:%d", host, port)
 }
 
-func (h *OpenClawHandler) gatewayReachable(port int) bool {
+func (h *OpenClawHandler) gatewayReachable(containerName string, port int) bool {
 	client := &http.Client{Timeout: 1200 * time.Millisecond}
-	for _, host := range h.gatewayHostCandidates() {
+	for _, host := range h.gatewayHostCandidates(containerName) {
 		target := fmt.Sprintf("http://%s:%d/health", host, port)
 		resp, err := client.Get(target)
 		if err == nil {
@@ -154,7 +187,7 @@ func (h *OpenClawHandler) checkContainerHealth(entry ContainerEntry) OpenClawSta
 
 	status := OpenClawStatus{
 		ContainerName:   entry.Name,
-		GatewayURL:      h.gatewayBaseURL(entry.Port),
+		GatewayURL:      h.gatewayBaseURL(entry.Name, entry.Port),
 		Port:            entry.Port,
 		Image:           entry.Image,
 		CreatedAt:       entry.CreatedAt,
@@ -165,6 +198,7 @@ func (h *OpenClawHandler) checkContainerHealth(entry ContainerEntry) OpenClawSta
 		AgentRole:       snapshot.Role,
 		AgentVibe:       snapshot.Vibe,
 		AgentPrinciples: snapshot.Principles,
+		RoleKind:        normalizeRoleKind(entry.RoleKind),
 	}
 
 	out, err := h.containerOutput("inspect", "-f", "{{.State.Running}}", entry.Name)
@@ -183,7 +217,7 @@ func (h *OpenClawHandler) checkContainerHealth(entry ContainerEntry) OpenClawSta
 		return status
 	}
 
-	gatewayReachable := h.gatewayReachable(entry.Port)
+	gatewayReachable := h.gatewayReachable(entry.Name, entry.Port)
 	if !gatewayReachable {
 		status.Error = "Gateway not reachable"
 		return status
@@ -290,8 +324,10 @@ func (h *OpenClawHandler) NextPortHandler() http.HandlerFunc {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
+		// Accept optional networkMode query param; defaults to host mode behavior
+		networkMode := r.URL.Query().Get("networkMode")
 		h.mu.RLock()
-		port := h.nextAvailablePort()
+		port := h.nextAvailablePort(networkMode)
 		h.mu.RUnlock()
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(map[string]int{"port": port}); err != nil {

@@ -1,683 +1,36 @@
-import { useState, useRef, useEffect, useCallback, memo, useMemo } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import styles from './ChatComponent.module.css'
-import HeaderDisplay from './HeaderDisplay'
-import MarkdownRenderer from './MarkdownRenderer'
 import ThinkingAnimation from './ThinkingAnimation'
 import HeaderReveal from './HeaderReveal'
-import ThinkingBlock from './ThinkingBlock'
-import ErrorBoundary from './ErrorBoundary'
-import ReMoMResponsesDisplay from './ReMoMResponsesDisplay'
-import FeedbackButtons from './FeedbackButtons'
+import ClawRoomChat from './ClawRoomChat'
+import { ClawModeToggle } from './ChatComponentControls'
+import ChatConversationSidebar from './ChatConversationSidebar'
+import ChatComponentInputBar from './ChatComponentInputBar'
+import ChatComponentMessages from './ChatComponentMessages'
+import ChatComponentTopBar from './ChatComponentTopBar'
+import {
+  CLAW_MODE_STORAGE_KEY,
+  CLAW_MODE_SYSTEM_PROMPT,
+  CLAW_TOOL_NAME_PREFIX,
+  type Choice,
+  type ConversationPreview,
+  generateConversationId,
+  generateMessageId,
+  type Message,
+  type ReMoMRoundResponse,
+} from './ChatComponentTypes'
 import { useToolRegistry } from '../tools'
 import { useMCPToolSync } from '../tools/mcp'
-import { getTranslateAttr } from '../hooks/useNoTranslate'
+import { ensureOpenClawServerConnected } from '../tools/mcp/api'
 import { useConversationStorage } from '../hooks'
-import type { ToolCall, ToolResult, WebSearchResult } from '../tools'
-
-// Copy button component for copying full response
-const CopyResponseButton = ({ copied, onCopy }: { copied: boolean; onCopy: () => void }) => {
-  return (
-    <button
-      className={styles.actionButton}
-      onClick={onCopy}
-      title={copied ? 'Copied!' : 'Copy'}
-      aria-label={copied ? 'Copied!' : 'Copy'}
-    >
-      {copied ? (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      ) : (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <rect x="9" y="9" width="13" height="13" rx="2" />
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-        </svg>
-      )}
-    </button>
-  )
-}
-
-// Message action bar component
-const MessageActionBar = ({ content }: { content: string }) => {
-  const [copied, setCopied] = useState(false)
-
-  const handleCopy = useCallback(async () => {
-    if (!content) return
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(content)
-      } else {
-        const textArea = document.createElement('textarea')
-        textArea.value = content
-        textArea.style.position = 'fixed'
-        textArea.style.left = '-9999px'
-        document.body.appendChild(textArea)
-        textArea.select()
-        document.execCommand('copy')
-        document.body.removeChild(textArea)
-      }
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
-      console.error('Failed to copy:', err)
-    }
-  }, [content])
-
-  return (
-    <div className={styles.messageActionBar}>
-      <CopyResponseButton copied={copied} onCopy={handleCopy} />
-    </div>
-  )
-}
-
-// Greeting lines - defined outside component to maintain stable reference
-const GREETING_LINES = [
-  "Hi there, I am MoM :-)",
-  "The System Intelligence for LLMs",
-  "The World First Model-of-Models",
-  "Open Source for Everyone",
-  "How can I help you today?"
-]
-
-const generateMessageId = () => `msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
-const generateConversationId = () => `conv-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
-
-// Typing effect component for greeting with multiple lines
-// Memoized to prevent re-renders when parent state changes (e.g., input typing)
-const TypingGreeting = memo(({ lines }: { lines: string[] }) => {
-  const [currentLineIndex, setCurrentLineIndex] = useState(0)
-  const [displayedText, setDisplayedText] = useState('')
-  const [isTyping, setIsTyping] = useState(true)
-
-  useEffect(() => {
-    if (currentLineIndex >= lines.length) return
-
-    const currentLine = lines[currentLineIndex]
-    let charIndex = 0
-    setIsTyping(true)
-    setDisplayedText('')
-
-    const typingInterval = setInterval(() => {
-      if (charIndex < currentLine.length) {
-        setDisplayedText(currentLine.slice(0, charIndex + 1))
-        charIndex++
-      } else {
-        clearInterval(typingInterval)
-        setIsTyping(false)
-        // Wait before moving to next line
-        setTimeout(() => {
-          if (currentLineIndex < lines.length - 1) {
-            setCurrentLineIndex(prev => prev + 1)
-          }
-        }, 1500)
-      }
-    }, 60)
-
-    return () => clearInterval(typingInterval)
-  }, [currentLineIndex, lines])
-
-  return (
-    <div className={styles.typingGreeting} translate="no">
-      <h2>
-        {displayedText}
-        {isTyping && <span className={styles.typingCursor}>|</span>}
-      </h2>
-    </div>
-  )
-})
-
-// Choice represents a single model's response in ratings mode
-interface Choice {
-  content: string
-  model?: string
-}
-
-// ReMoM intermediate response structure
-interface ReMoMIntermediateResp {
-  model: string
-  content: string
-  reasoning?: string
-  compacted_content?: string
-  token_count?: number
-}
-
-interface ReMoMRoundResponse {
-  round: number
-  breadth: number
-  responses: ReMoMIntermediateResp[]
-}
-
-// Re-export ToolCall and ToolResult types from tools module
-// Local SearchResult alias for backward compatibility
-type SearchResult = WebSearchResult
-
-interface Message {
-  id: string
-  role: 'user' | 'assistant' | 'system'
-  content: string
-  timestamp: Date
-  isStreaming?: boolean
-  headers?: Record<string, string>
-  // For ratings mode: multiple choices from different models
-  choices?: Choice[]
-  // Thinking process (from reasoning_content field)
-  thinkingProcess?: string
-  // Tool calls and results
-  toolCalls?: ToolCall[]
-  toolResults?: ToolResult[]
-  // For ReMoM: intermediate responses from multi-round reasoning
-  reasoning_mom_responses?: ReMoMRoundResponse[]
-}
-
-// Web Search Card Component
-const WebSearchCard = ({
-  toolCall,
-  toolResult,
-  isExpanded,
-  onToggle
-}: {
-  toolCall: ToolCall
-  toolResult?: ToolResult
-  isExpanded: boolean
-  onToggle: () => void
-}) => {
-  // Safely parse arguments - may be incomplete during streaming
-  let query = ''
-  try {
-    const args = JSON.parse(toolCall.function.arguments || '{}')
-    query = args.query || ''
-  } catch {
-    // Arguments still streaming or invalid, show partial or empty
-    const match = toolCall.function.arguments?.match(/"query"\s*:\s*"([^"]*)/)
-    query = (match && match[1]) || 'Searching...'
-  }
-
-  // Safely get results - ensure it's an array
-  const results = useMemo(() => {
-    if (!toolResult?.content) return undefined
-    if (Array.isArray(toolResult.content)) {
-      return toolResult.content as SearchResult[]
-    }
-    // If content is a string (error message), return undefined
-    return undefined
-  }, [toolResult?.content])
-
-  return (
-    <div className={styles.webSearchCard}>
-      <div className={styles.webSearchHeader} onClick={onToggle}>
-        <div className={styles.webSearchIcon}>
-          {toolCall.status === 'running' ? (
-            <svg className={styles.searchSpinner} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" />
-              <path d="M21 21l-4.35-4.35" />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" />
-              <path d="M21 21l-4.35-4.35" />
-            </svg>
-          )}
-        </div>
-        <div className={styles.webSearchInfo}>
-          <span className={styles.webSearchTitle}>
-            {toolCall.status === 'running' ? 'Searching...' : 'Web Search'}
-          </span>
-          <span className={styles.webSearchQuery}>"{query}"</span>
-        </div>
-        <div className={styles.webSearchStatus}>
-          {toolCall.status === 'completed' && results && (
-            <span className={styles.webSearchCount}>{results.length} sources</span>
-          )}
-          <svg
-            className={`${styles.webSearchChevron} ${isExpanded ? styles.expanded : ''}`}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </div>
-      </div>
-
-      {isExpanded && toolCall.status === 'completed' && results && results.length > 0 && (
-        <div className={styles.webSearchResults}>
-          <div className={styles.sourcePills}>
-            {results.map((result, idx) => (
-              <a
-                key={idx}
-                href={result.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.sourcePill}
-                title={result.snippet}
-              >
-                <span className={styles.sourcePillNumber}>{idx + 1}</span>
-                <span className={styles.sourcePillDomain}>{(() => { try { return new URL(result.url).hostname } catch { return result.url } })()}</span>
-              </a>
-            ))}
-          </div>
-          <div className={styles.sourceDetails}>
-            {results.map((result, idx) => (
-              <div key={idx} className={styles.sourceItem}>
-                <div className={styles.sourceItemHeader}>
-                  <span className={styles.sourceItemNumber}>[{idx + 1}]</span>
-                  <a
-                    href={result.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.sourceItemTitle}
-                  >
-                    {result.title}
-                  </a>
-                </div>
-                <p className={styles.sourceItemSnippet}>{result.snippet}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {toolCall.status === 'running' && (
-        <div className={styles.webSearchLoading}>
-          <div className={styles.webSearchLoadingBar} />
-        </div>
-      )}
-    </div>
-  )
-}
-
-// Open Web Card Component - displays webpage content extraction
-const OpenWebCard = ({
-  toolCall,
-  toolResult,
-  isExpanded,
-  onToggle
-}: {
-  toolCall: ToolCall
-  toolResult?: ToolResult
-  isExpanded: boolean
-  onToggle: () => void
-}) => {
-  // Safely parse arguments
-  let url = ''
-  try {
-    const args = JSON.parse(toolCall.function.arguments || '{}')
-    url = args.url || ''
-  } catch {
-    const match = toolCall.function.arguments?.match(/"url"\s*:\s*"([^"]*)/)
-    url = (match && match[1]) || 'Loading...'
-  }
-
-  // Extract domain from URL
-  const domain = useMemo(() => {
-    try {
-      return new URL(url).hostname
-    } catch {
-      return url
-    }
-  }, [url])
-
-  // Get result data
-  const resultData = useMemo(() => {
-    if (!toolResult?.content) return null
-    if (typeof toolResult.content === 'object' && toolResult.content !== null) {
-      const data = toolResult.content as { title?: string; content?: string; length?: number; truncated?: boolean }
-      return data
-    }
-    return null
-  }, [toolResult?.content])
-
-  return (
-    <div className={styles.webSearchCard}>
-      <div className={styles.webSearchHeader} onClick={onToggle}>
-        <div className={styles.webSearchIcon}>
-          {toolCall.status === 'running' ? (
-            <svg className={styles.searchSpinner} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-            </svg>
-          )}
-        </div>
-        <div className={styles.webSearchInfo}>
-          <span className={styles.webSearchTitle}>
-            {toolCall.status === 'running' ? 'Opening page...' : 'Web Page'}
-          </span>
-          <span className={styles.webSearchQuery}>{domain}</span>
-        </div>
-        <div className={styles.webSearchStatus}>
-          {toolCall.status === 'completed' && resultData && (
-            <span className={styles.webSearchCount}>
-              {resultData.length ? `${Math.round(resultData.length / 1000)}k chars` : ''}
-              {resultData.truncated ? ' (truncated)' : ''}
-            </span>
-          )}
-          {toolCall.status === 'failed' && (
-            <span className={styles.webSearchCount} style={{ color: 'var(--color-error)' }}>Failed</span>
-          )}
-          <svg
-            className={`${styles.webSearchChevron} ${isExpanded ? styles.expanded : ''}`}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </div>
-      </div>
-
-      {isExpanded && toolCall.status === 'completed' && resultData && (
-        <div className={styles.webSearchResults}>
-          <div className={styles.sourceDetails}>
-            <div className={styles.sourceItem}>
-              <div className={styles.sourceItemHeader}>
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={styles.sourceItemTitle}
-                >
-                  {resultData.title || 'Untitled'}
-                </a>
-              </div>
-              <div className={styles.openWebContent}>
-                {resultData.content?.substring(0, 500)}
-                {(resultData.content?.length || 0) > 500 && '...'}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isExpanded && toolCall.status === 'failed' && toolResult?.error && (
-        <div className={styles.webSearchResults}>
-          <div className={styles.sourceDetails}>
-            <div className={styles.sourceItem}>
-              <p className={styles.sourceItemSnippet} style={{ color: 'var(--color-error)' }}>
-                {toolResult.error}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {toolCall.status === 'running' && (
-        <div className={styles.webSearchLoading}>
-          <div className={styles.webSearchLoadingBar} />
-        </div>
-      )}
-    </div>
-  )
-}
-
-// Generic Tool Card - routes to specific card based on tool type
-const ToolCard = ({
-  toolCall,
-  toolResult,
-  isExpanded,
-  onToggle
-}: {
-  toolCall: ToolCall
-  toolResult?: ToolResult
-  isExpanded: boolean
-  onToggle: () => void
-}) => {
-  const toolName = toolCall.function.name
-
-  if (toolName === 'search_web') {
-    return (
-      <WebSearchCard
-        toolCall={toolCall}
-        toolResult={toolResult}
-        isExpanded={isExpanded}
-        onToggle={onToggle}
-      />
-    )
-  }
-
-  if (toolName === 'open_web') {
-    return (
-      <OpenWebCard
-        toolCall={toolCall}
-        toolResult={toolResult}
-        isExpanded={isExpanded}
-        onToggle={onToggle}
-      />
-    )
-  }
-
-  // Fallback for unknown tools
-  return (
-    <div className={styles.webSearchCard}>
-      <div className={styles.webSearchHeader} onClick={onToggle}>
-        <div className={styles.webSearchIcon}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-          </svg>
-        </div>
-        <div className={styles.webSearchInfo}>
-          <span className={styles.webSearchTitle}>{toolName}</span>
-          <span className={styles.webSearchQuery}>{toolCall.status}</span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Tool Toggle Component
-const ToolToggle = ({
-  enabled,
-  onToggle,
-  disabled
-}: {
-  enabled: boolean
-  onToggle: () => void
-  disabled?: boolean
-}) => {
-  return (
-    <button
-      className={`${styles.inputActionButton} ${enabled ? styles.searchToggleActive : ''}`}
-      onClick={onToggle}
-      disabled={disabled}
-      data-tooltip={enabled ? 'Web Search enabled' : 'Enable Web Search'}
-    >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M2 12h20" />
-        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-      </svg>
-    </button>
-  )
-}
-
-// Citation Link Component - renders [1], [2], etc. as clickable links
-const CitationLink = ({
-  number,
-  url,
-  title
-}: {
-  number: number
-  url?: string
-  title?: string
-}) => {
-  const handleClick = (e: React.MouseEvent) => {
-    if (url) {
-      e.preventDefault()
-      window.open(url, '_blank', 'noopener,noreferrer')
-    }
-  }
-
-  return (
-    <span
-      className={styles.citationLink}
-      onClick={handleClick}
-      title={title || `Source ${number}`}
-      role="button"
-      tabIndex={0}
-    >
-      [{number}]
-    </span>
-  )
-}
-
-// Content with Citations - parses [1], [2] etc and renders as clickable links
-const ContentWithCitations = ({
-  content,
-  sources,
-  isStreaming = false
-}: {
-  content: string
-  sources?: SearchResult[] | unknown
-  isStreaming?: boolean
-}) => {
-  // Safely normalize sources to array
-  const safeSources = useMemo(() => {
-    if (!sources) return undefined
-    if (Array.isArray(sources)) return sources as SearchResult[]
-    return undefined
-  }, [sources])
-
-  // Disable translation during streaming to prevent DOM conflicts
-  const translateAttr = getTranslateAttr(isStreaming)
-
-  // Memoize the processed content to avoid re-parsing on every render
-  const processedContent = useMemo(() => {
-    // Safety check for content - always return consistent structure
-    if (!content || typeof content !== 'string') {
-      return null
-    }
-
-    // Parse content and replace [n] patterns with citation links
-    const parseContentWithCitations = (text: string, keyPrefix: string): React.ReactNode[] => {
-      const parts: React.ReactNode[] = []
-      // Match [1], [2], [3] etc. - citation format
-      const citationRegex = /\[(\d+)\]/g
-      let lastIndex = 0
-      let match
-      let keyIndex = 0
-      let iterationCount = 0
-      const maxIterations = 1000 // Prevent infinite loop
-
-      while ((match = citationRegex.exec(text)) !== null && iterationCount < maxIterations) {
-        iterationCount++
-        // Add text before the citation
-        if (match.index > lastIndex) {
-          parts.push(<span key={`${keyPrefix}-text-${keyIndex++}`}>{text.slice(lastIndex, match.index)}</span>)
-        }
-
-        const citationNumber = parseInt(match[1], 10)
-        const source = safeSources?.[citationNumber - 1] // 1-indexed
-
-        parts.push(
-          <CitationLink
-            key={`${keyPrefix}-citation-${keyIndex++}`}
-            number={citationNumber}
-            url={source?.url}
-            title={source ? `${source.title} - ${(() => { try { return new URL(source.url).hostname } catch { return source.url } })()}` : undefined}
-          />
-        )
-
-        lastIndex = match.index + match[0].length
-      }
-
-      // Add remaining text
-      if (lastIndex < text.length) {
-        parts.push(<span key={`${keyPrefix}-text-${keyIndex++}`}>{text.slice(lastIndex)}</span>)
-      }
-
-      return parts
-    }
-
-    // If no sources, just render with MarkdownRenderer wrapped in consistent container
-    if (!safeSources || safeSources.length === 0) {
-      return <MarkdownRenderer content={content} />
-    }
-
-    // Check if content has citations
-    const hasCitations = /\[\d+\]/.test(content)
-
-    if (!hasCitations) {
-      return <MarkdownRenderer content={content} />
-    }
-
-    // For content with citations, we need to handle it specially
-    // Split by markdown blocks to preserve code blocks etc.
-    const lines = content.split('\n')
-    const processedLines: React.ReactNode[] = []
-    let inCodeBlock = false
-    let codeBlockContent = ''
-    let codeBlockLang = ''
-
-    lines.forEach((line, lineIndex) => {
-      // Check for code block start/end
-      if (line.startsWith('```')) {
-        if (!inCodeBlock) {
-          inCodeBlock = true
-          codeBlockLang = line.slice(3).trim()
-          codeBlockContent = ''
-        } else {
-          // End of code block - render as markdown
-          processedLines.push(
-            <div key={`code-${lineIndex}`} className={styles.codeBlockWrapper}>
-              <MarkdownRenderer
-                content={`\`\`\`${codeBlockLang}\n${codeBlockContent}\`\`\``}
-              />
-            </div>
-          )
-          inCodeBlock = false
-          codeBlockLang = ''
-        }
-        return
-      }
-
-      if (inCodeBlock) {
-        codeBlockContent += (codeBlockContent ? '\n' : '') + line
-        return
-      }
-
-      // For regular lines, check for citations
-      if (/\[\d+\]/.test(line)) {
-        // Line has citations - render with citation links
-        processedLines.push(
-          <p key={`line-${lineIndex}`} className={styles.citationParagraph}>
-            {parseContentWithCitations(line, `line-${lineIndex}`)}
-          </p>
-        )
-      } else if (line.trim() === '') {
-        // Empty line - add spacer div instead of br for consistent structure
-        processedLines.push(<div key={`space-${lineIndex}`} className={styles.lineBreak} />)
-      } else {
-        // Regular line without citations - use markdown wrapped in div
-        processedLines.push(
-          <div key={`md-${lineIndex}`} className={styles.markdownLine}>
-            <MarkdownRenderer content={line} />
-          </div>
-        )
-      }
-    })
-
-    return <>{processedLines}</>
-  }, [content, safeSources])
-
-  // Always return consistent div structure
-  // Disable translation during streaming to prevent DOM conflicts with browser translators
-  return (
-    <div className={styles.contentWithCitations} translate={translateAttr}>
-      {processedContent}
-    </div>
-  )
-}
+import type { ToolCall, ToolResult } from '../tools'
 
 interface ChatComponentProps {
   endpoint?: string
   isFullscreenMode?: boolean
 }
+
+type ClawPlaygroundView = 'control' | 'room'
 
 const ChatComponent = ({
   endpoint = '/api/router/v1/chat/completions',
@@ -694,8 +47,17 @@ const ChatComponent = ({
   const [pendingHeaders, setPendingHeaders] = useState<Record<string, string> | null>(null)
   const [isFullscreen] = useState(isFullscreenMode)
   const [enableWebSearch, setEnableWebSearch] = useState(true)
+  const [enableClawMode, setEnableClawMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true
+    const saved = window.localStorage.getItem(CLAW_MODE_STORAGE_KEY)
+    if (saved === null) return true
+    return saved === 'true'
+  })
+  const [isTogglingClawMode, setIsTogglingClawMode] = useState(false)
   const [expandedToolCards, setExpandedToolCards] = useState<Set<string>>(new Set())
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [clawView, setClawView] = useState<ClawPlaygroundView>(() => 'control')
+  const [teamRoomCreateToken, setTeamRoomCreateToken] = useState(0)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -715,7 +77,7 @@ const ChatComponent = ({
   }, [])
 
   // MCP 工具同步 - 自动将 MCP 服务器的工具同步到 toolRegistry
-  useMCPToolSync({ enabled: true, pollInterval: 30000 })
+  const { refresh: refreshMCPTools } = useMCPToolSync({ enabled: true, pollInterval: 30000 })
 
   // Tool Registry integration
   // Search tools (controlled by web search toggle)
@@ -728,6 +90,19 @@ const ChatComponent = ({
     enabledOnly: true,
     categories: ['code', 'file', 'image', 'custom'],
   })
+
+  const baseOtherToolDefinitions = useMemo(
+    () => otherToolDefinitions.filter(def => !def.function.name.startsWith(CLAW_TOOL_NAME_PREFIX)),
+    [otherToolDefinitions]
+  )
+  const clawToolDefinitions = useMemo(
+    () => otherToolDefinitions.filter(def => def.function.name.startsWith(CLAW_TOOL_NAME_PREFIX)),
+    [otherToolDefinitions]
+  )
+  const activeOtherToolDefinitions = useMemo(
+    () => (enableClawMode ? [...baseOtherToolDefinitions, ...clawToolDefinitions] : baseOtherToolDefinitions),
+    [baseOtherToolDefinitions, clawToolDefinitions, enableClawMode]
+  )
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -757,6 +132,47 @@ const ChatComponent = ({
     }
   }, [isFullscreen])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem(CLAW_MODE_STORAGE_KEY, String(enableClawMode))
+  }, [enableClawMode])
+
+  useEffect(() => {
+    if (!enableClawMode) {
+      setIsTogglingClawMode(false)
+      setClawView('control')
+      return
+    }
+
+    let isCurrent = true
+    const bootstrapClawTools = async () => {
+      setIsTogglingClawMode(true)
+      try {
+        await ensureOpenClawServerConnected()
+        await refreshMCPTools()
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to enable Claw Mode'
+        console.warn(`[ClawOS] UI mode enabled, but MCP bootstrap failed: ${message}`)
+      } finally {
+        if (isCurrent) {
+          setIsTogglingClawMode(false)
+        }
+      }
+    }
+
+    void bootstrapClawTools()
+
+    return () => {
+      isCurrent = false
+    }
+  }, [enableClawMode, refreshMCPTools])
+
+  useEffect(() => {
+    if (enableClawMode && clawView === 'room') {
+      setIsSidebarOpen(false)
+    }
+  }, [enableClawMode, clawView])
+
   // Hydrate the most recent conversation from localStorage once
   useEffect(() => {
     if (hasHydratedConversation.current) return
@@ -778,7 +194,7 @@ const ChatComponent = ({
     saveConversation(conversationId, messages)
   }, [conversationId, messages, saveConversation])
 
-  const conversationPreviews = useMemo(() => {
+  const conversationPreviews = useMemo<ConversationPreview[]>(() => {
     return [...conversations]
       .sort((a, b) => a.createdAt - b.createdAt)
       .map(conv => {
@@ -805,19 +221,6 @@ const ChatComponent = ({
   const handleHeaderRevealComplete = useCallback(() => {
     setShowHeaderReveal(false)
     setPendingHeaders(null)
-  }, [])
-
-  const handleNewConversation = useCallback(() => {
-    abortControllerRef.current?.abort()
-    setIsLoading(false)
-    setConversationId(generateConversationId())
-    setMessages([])
-    setInputValue('')
-    setError(null)
-    setPendingHeaders(null)
-    setShowHeaderReveal(false)
-    setShowThinking(false)
-    setExpandedToolCards(new Set())
   }, [])
 
   const handleSelectConversation = useCallback(
@@ -934,6 +337,10 @@ const ChatComponent = ({
         }
       }
 
+      if (enableClawMode) {
+        chatMessages.unshift({ role: 'system', content: CLAW_MODE_SYSTEM_PROMPT })
+      }
+
       // Add the new user message
       chatMessages.push({ role: 'user', content: trimmedInput })
 
@@ -948,7 +355,7 @@ const ChatComponent = ({
       // - Search tools: only when web search is enabled
       // - Other tools: always available
       const activeTools = [
-        ...otherToolDefinitions,
+        ...activeOtherToolDefinitions,
         ...(enableWebSearch ? searchToolDefinitions : []),
       ]
       if (activeTools.length > 0) {
@@ -1532,10 +939,9 @@ const ChatComponent = ({
     setIsLoading(false)
   }
 
-  const handleClear = () => {
+  const handleNewConversation = useCallback(() => {
     abortControllerRef.current?.abort()
     setIsLoading(false)
-    deleteConversation(conversationId)
     setMessages([])
     setError(null)
     setPendingHeaders(null)
@@ -1544,11 +950,66 @@ const ChatComponent = ({
     setExpandedToolCards(new Set())
     setInputValue('')
     setConversationId(generateConversationId())
-  }
+  }, [])
+
+  const handleToggleClawMode = useCallback(() => {
+    if (isLoading || isTogglingClawMode) return
+
+    if (enableClawMode) {
+      setEnableClawMode(false)
+      setError(null)
+      return
+    }
+
+    setEnableClawMode(true)
+    setError(null)
+  }, [enableClawMode, isLoading, isTogglingClawMode])
+
+  const isTeamRoomView = enableClawMode && clawView === 'room'
+  const modeToggleDisabled = isLoading || isTogglingClawMode
+
+  const handleToggleTeamView = useCallback(() => {
+    if (!enableClawMode || modeToggleDisabled) return
+    setClawView(prev => (prev === 'room' ? 'control' : 'room'))
+  }, [enableClawMode, modeToggleDisabled])
+
+  const handleTopBarCreate = useCallback(() => {
+    if (isTeamRoomView) {
+      setTeamRoomCreateToken(prev => prev + 1)
+      return
+    }
+    handleNewConversation()
+  }, [handleNewConversation, isTeamRoomView])
+
+  const handleToggleToolCard = useCallback((toolCallId: string) => {
+    setExpandedToolCards(prev => {
+      const next = new Set(prev)
+      if (next.has(toolCallId)) {
+        next.delete(toolCallId)
+      } else {
+        next.add(toolCallId)
+      }
+      return next
+    })
+  }, [])
+
+  const roomChatToggleControl = enableClawMode ? (
+    <button
+      type="button"
+      className={`${styles.teamToggleButton} ${isTeamRoomView ? styles.teamToggleButtonActive : ''}`}
+      onClick={handleToggleTeamView}
+      aria-pressed={isTeamRoomView}
+      aria-label={isTeamRoomView ? 'Exit ClawRoom view' : 'Open ClawRoom view'}
+      title={isTeamRoomView ? 'Switch to chat view' : 'Switch to room chat view'}
+      disabled={modeToggleDisabled}
+    >
+      <img src="/openclaw.svg" alt="" aria-hidden="true" className={styles.clawToggleIcon} />
+      <span className={styles.teamToggleLabel}>ClawRoom</span>
+    </button>
+  ) : null
 
   return (
     <>
-      {/* Thinking Animation */}
       {showThinking && (
         <ThinkingAnimation
           onComplete={handleThinkingComplete}
@@ -1556,7 +1017,6 @@ const ChatComponent = ({
         />
       )}
 
-      {/* Header Reveal */}
       {showHeaderReveal && pendingHeaders && (
         <HeaderReveal
           headers={pendingHeaders}
@@ -1565,379 +1025,93 @@ const ChatComponent = ({
         />
       )}
 
-      <div className={`${styles.container} ${isFullscreen ? styles.fullscreen : ''}`}>
+      <div
+        className={`${styles.container} ${isFullscreen ? styles.fullscreen : ''}`}
+      >
         <div className={styles.mainLayout}>
-          {isSidebarOpen && (
-            <aside className={styles.sidebar}>
-              <div className={styles.sidebarHeader}>
-                <div>
-                  <div className={styles.sidebarTitle}>Conversations</div>
-                  <div className={styles.sidebarSubtitle}>
-                    {conversationPreviews.length ? `${conversationPreviews.length} saved` : 'No saved conversations'}
-                  </div>
-                </div>
-                <div className={styles.sidebarActions}>
-                  <button
-                    type="button"
-                    className={styles.sidebarButton}
-                    onClick={() => setIsSidebarOpen(false)}
-                    title="Hide sidebar"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M15 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.sidebarButton}
-                    onClick={handleNewConversation}
-                    title="New conversation"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              <div className={styles.sidebarList}>
-                {conversationPreviews.length === 0 ? (
-                  <div className={styles.sidebarEmpty}>Start a conversation to see it here.</div>
-                ) : (
-                  conversationPreviews.map(conv => (
-                    <div
-                      key={conv.id}
-                      className={`${styles.sidebarItem} ${conv.id === conversationId ? styles.sidebarItemActive : ''}`}
-                      onClick={() => handleSelectConversation(conv.id)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault()
-                          handleSelectConversation(conv.id)
-                        }
-                      }}
-                    >
-                      <div className={styles.sidebarItemText}>
-                        <div className={styles.sidebarItemTitle}>{conv.preview}</div>
-                        <div className={styles.sidebarItemMeta}>
-                          {new Date(conv.updatedAt).toLocaleString(undefined, {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            month: 'short',
-                            day: 'numeric',
-                          })}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        className={styles.sidebarDeleteButton}
-                        onClick={e => {
-                          e.stopPropagation()
-                          handleDeleteConversation(conv.id)
-                        }}
-                        title="Delete conversation"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                          <path d="M2 4h12M5.5 4V2.5h5V4M13 4v9.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4M6.5 7v4M9.5 7v4" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </aside>
+          {!isTeamRoomView && isSidebarOpen && (
+            <ChatConversationSidebar
+              conversationId={conversationId}
+              conversationPreviews={conversationPreviews}
+              onDeleteConversation={handleDeleteConversation}
+              onSelectConversation={handleSelectConversation}
+            />
           )}
 
           <div className={styles.chatArea}>
-            <div className={styles.chatTopBar}>
-              <button
-                type="button"
-                className={styles.sidebarToggleButton}
-                onClick={() => setIsSidebarOpen(prev => !prev)}
-                title={isSidebarOpen ? 'Close' : 'Open'}
-              >
-                {isSidebarOpen ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M15 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                ) : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M9 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-                <span className={styles.sidebarToggleLabel}>{isSidebarOpen ? 'Close' : 'Open'}</span>
-              </button>
-            </div>
-            {error && (
-              <div className={styles.error}>
-                <span className={styles.errorIcon}>⚠️</span>
-                <span>{error}</span>
-                <button
-                  className={styles.errorDismiss}
-                  onClick={() => setError(null)}
-                >
-                  ×
-                </button>
-              </div>
-            )}
-
-            <div className={styles.messagesContainer}>
-              {messages.length === 0 ? (
-                <div className={styles.emptyState}>
-                  <TypingGreeting lines={GREETING_LINES} />
-                </div>
-              ) : (
-                <div className={styles.messages}>
-                  {messages.map((message, msgIdx) => {
-                    const prevUserQuery = messages[msgIdx - 1]?.role === 'user' ? messages[msgIdx - 1].content : undefined
-                    return (
-                    <div
-                      key={message.id}
-                      className={`${styles.message} ${styles[message.role]}`}
-                      // Disable translation during streaming to prevent DOM conflicts
-                      translate={getTranslateAttr(message.isStreaming ?? false)}
-                    >
-                      <div className={styles.messageAvatar}>
-                        {message.role === 'user' ? (
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        ) : (
-                          <img src="/vllm.png" alt="vLLM SR" className={styles.avatarImage} />
-                        )}
-                      </div>
-                      <div className={styles.messageContent}>
-                        <div className={styles.messageRole}>
-                          {message.role === 'user' ? 'You' : 'vLLM SR'}
-                        </div>
-                        {/* Ratings mode: multiple choices */}
-                        {message.role === 'assistant' && message.choices && message.choices.length > 1 ? (
-                          <>
-                            {/* Show tool calls if any */}
-                            {message.toolCalls && message.toolCalls.length > 0 && (
-                              <div className={styles.toolCallsContainer}>
-                                {message.toolCalls.map(tc => (
-                                  <ToolCard
-                                    key={tc.id}
-                                    toolCall={tc}
-                                    toolResult={message.toolResults?.find(tr => tr.callId === tc.id)}
-                                    isExpanded={expandedToolCards.has(tc.id)}
-                                    onToggle={() => {
-                                      setExpandedToolCards(prev => {
-                                        const next = new Set(prev)
-                                        if (next.has(tc.id)) {
-                                          next.delete(tc.id)
-                                        } else {
-                                          next.add(tc.id)
-                                        }
-                                        return next
-                                      })
-                                    }}
-                                  />
-                                ))}
-                              </div>
-                            )}
-                            {/* Show thinking block if available */}
-                            {message.thinkingProcess && (
-                              <ThinkingBlock
-                                content={message.thinkingProcess}
-                                isStreaming={message.isStreaming}
-                              />
-                            )}
-                            <div className={styles.ratingsChoices}>
-                              {message.choices.map((choice, idx) => (
-                                <div key={idx} className={styles.choiceCard}>
-                                  <div className={styles.choiceHeader}>
-                                    <span className={styles.choiceModel}>{choice.model || `Model ${idx + 1}`}</span>
-                                    <span className={styles.choiceIndex}>Choice {idx + 1}</span>
-                                  </div>
-                                  <div className={styles.choiceContent}>
-                                    <ErrorBoundary>
-                                      <ContentWithCitations
-                                        content={choice.content}
-                                        sources={
-                                          message.toolResults?.find(tr => tr.name === 'search_web')?.content
-                                        }
-                                        isStreaming={message.isStreaming}
-                                      />
-                                    </ErrorBoundary>
-                                    {message.isStreaming && idx === 0 && (
-                                      <span className={styles.cursor}>▊</span>
-                                    )}
-                                  </div>
-                                  {!message.isStreaming && choice.model && (
-                                    <div className={styles.choiceActions}>
-                                      <FeedbackButtons
-                                        modelId={choice.model}
-                                        category={message.headers?.['x-vsr-selected-decision']}
-                                        query={prevUserQuery}
-                                        otherModelIds={message.choices?.map(c => c.model).filter((m): m is string => m != null && m !== choice.model) ?? []}
-                                      />
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </>
-                        ) : (
-                          /* Single choice mode */
-                          <>
-                            {/* Show tool calls if any - filter out failed ones for cleaner UX */}
-                            {message.role === 'assistant' && message.toolCalls && message.toolCalls.length > 0 && (() => {
-                              const successfulToolCalls = message.toolCalls.filter(tc => tc.status !== 'failed')
-                              const failedCount = message.toolCalls.length - successfulToolCalls.length
-
-                              if (successfulToolCalls.length === 0 && failedCount > 0) {
-                                // All failed, show nothing or a minimal indicator
-                                return null
-                              }
-
-                              return (
-                                <div className={styles.toolCallsContainer}>
-                                  {successfulToolCalls.map(tc => (
-                                    <ErrorBoundary key={tc.id}>
-                                      <ToolCard
-                                        toolCall={tc}
-                                        toolResult={message.toolResults?.find(tr => tr.callId === tc.id)}
-                                        isExpanded={expandedToolCards.has(tc.id)}
-                                        onToggle={() => {
-                                          setExpandedToolCards(prev => {
-                                            const next = new Set(prev)
-                                            if (next.has(tc.id)) {
-                                              next.delete(tc.id)
-                                            } else {
-                                              next.add(tc.id)
-                                            }
-                                            return next
-                                          })
-                                        }}
-                                      />
-                                    </ErrorBoundary>
-                                  ))}
-                                </div>
-                              )
-                            })()}
-                            {/* Show thinking block if available */}
-                            {message.role === 'assistant' && message.thinkingProcess && (
-                              <ThinkingBlock
-                                content={message.thinkingProcess}
-                                isStreaming={message.isStreaming}
-                              />
-                            )}
-                            <div className={styles.messageText}>
-                              {message.role === 'assistant' && message.content ? (
-                                <>
-                                  <ErrorBoundary>
-                                    <ContentWithCitations
-                                      content={message.content}
-                                      sources={
-                                        message.toolResults?.find(tr => tr.name === 'search_web')?.content
-                                      }
-                                      isStreaming={message.isStreaming}
-                                    />
-                                  </ErrorBoundary>
-                                  {message.isStreaming && (
-                                    <span className={styles.cursor}>▊</span>
-                                  )}
-                                </>
-                              ) : (
-                                <>
-                                  {message.content || (message.isStreaming && (
-                                    <span className={styles.cursor}>▊</span>
-                                  ))}
-                                  {message.isStreaming && message.content && (
-                                    <span className={styles.cursor}>▊</span>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          </>
-                        )}
-                        {message.role === 'assistant' && message.headers && (
-                          <HeaderDisplay headers={message.headers} />
-                        )}
-                        {message.role === 'assistant' && message.reasoning_mom_responses && (
-                          <>
-                            {console.log('[ReMoM] Rendering ReMoMResponsesDisplay for message:', message.id, 'rounds:', message.reasoning_mom_responses)}
-                            <ReMoMResponsesDisplay rounds={message.reasoning_mom_responses} />
-                          </>
-                        )}
-                        {message.role === 'assistant' && message.content && !message.isStreaming && (
-                          <div className={styles.messageActionRow}>
-                            <MessageActionBar content={message.content} />
-                            {message.headers?.['x-vsr-selected-model'] && (
-                              <FeedbackButtons
-                                modelId={message.headers['x-vsr-selected-model']}
-                                category={message.headers['x-vsr-selected-decision']}
-                                query={prevUserQuery}
-                              />
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    )
-                  })}
-                  <div ref={messagesEndRef} />
-                </div>
-              )}
-            </div>
-
-            <div className={styles.inputContainer}>
-              <div className={`${styles.inputWrapper} ${inputValue.trim() ? styles.hasContent : ''}`}>
-                <textarea
-                  ref={inputRef}
-                  value={inputValue}
-                  onChange={e => setInputValue(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Ask me anything..."
-                  className={styles.input}
-                  rows={1}
-                  disabled={isLoading}
-                />
-                <div className={styles.inputActionsRow}>
-                  <div className={styles.inputActions}>
-                    <ToolToggle
-                      enabled={enableWebSearch}
-                      onToggle={() => setEnableWebSearch(!enableWebSearch)}
-                      disabled={isLoading}
-                    />
+            <ChatComponentTopBar
+              isSidebarOpen={isSidebarOpen}
+              isTeamRoomView={isTeamRoomView}
+              onCreate={handleTopBarCreate}
+              onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
+            />
+            {isTeamRoomView ? (
+              <ClawRoomChat
+                isSidebarOpen={isSidebarOpen}
+                createRoomRequestToken={teamRoomCreateToken}
+                inputModeControls={(
+                  <>
                     <button
-                      className={styles.inputActionButton}
-                      onClick={handleClear}
-                      data-tooltip="Clear chat"
                       type="button"
+                      className={`${styles.inputActionButton} ${styles.searchToggleActive}`}
+                      onClick={event => event.preventDefault()}
+                      data-tooltip="Web Search enabled in Room Chat"
+                      aria-label="Web Search enabled in Room Chat"
                     >
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <path d="M2 4h12M5.5 4V2.5h5V4M13 4v9.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4M6.5 7v4M9.5 7v4" strokeLinecap="round" strokeLinejoin="round" />
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M2 12h20" />
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
                       </svg>
+                    </button>
+                    <ClawModeToggle
+                      enabled={enableClawMode}
+                      onToggle={handleToggleClawMode}
+                      disabled={modeToggleDisabled}
+                    />
+                    {roomChatToggleControl}
+                  </>
+                )}
+              />
+            ) : (
+              <>
+                {error && (
+                  <div className={styles.error}>
+                    <span className={styles.errorIcon}>⚠️</span>
+                    <span>{error}</span>
+                    <button
+                      className={styles.errorDismiss}
+                      onClick={() => setError(null)}
+                    >
+                      ×
                     </button>
                   </div>
-                  {isLoading ? (
-                    <button
-                      className={`${styles.sendButton} ${styles.stopButton}`}
-                      onClick={handleStop}
-                      title="Stop generating"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <rect x="6" y="6" width="12" height="12" rx="2" />
-                      </svg>
-                    </button>
-                  ) : (
-                    <button
-                      className={styles.sendButton}
-                      onClick={handleSend}
-                      disabled={!inputValue.trim()}
-                      title="Send message"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path d="M12 19V5M5 12l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
+                )}
+                <ChatComponentMessages
+                  expandedToolCards={expandedToolCards}
+                  messages={messages}
+                  messagesEndRef={messagesEndRef}
+                  onToggleToolCard={handleToggleToolCard}
+                />
+
+                <ChatComponentInputBar
+                  enableClawMode={enableClawMode}
+                  enableWebSearch={enableWebSearch}
+                  inputRef={inputRef}
+                  inputValue={inputValue}
+                  isLoading={isLoading}
+                  isTogglingClawMode={isTogglingClawMode}
+                  modeToggleDisabled={modeToggleDisabled}
+                  onChangeInput={setInputValue}
+                  onKeyDown={handleKeyDown}
+                  onSend={handleSend}
+                  onStop={handleStop}
+                  onToggleClawMode={handleToggleClawMode}
+                  onToggleWebSearch={() => setEnableWebSearch(prev => !prev)}
+                  roomChatToggleControl={roomChatToggleControl}
+                />
+              </>
+            )}
           </div>
         </div>
       </div>

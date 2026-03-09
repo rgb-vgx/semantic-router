@@ -15,14 +15,14 @@ const Layout: React.FC<LayoutProps> = ({ children, configSection, onConfigSectio
   const location = useLocation()
   const navigate = useNavigate()
 
-  const isConfigPage = location.pathname === '/config'
+  const isConfigPage = location.pathname === '/config' || location.pathname.startsWith('/config/')
 
   // Active state detection
+  const isBuilderActive = location.pathname === '/builder'
   const isModelsActive = isConfigPage && configSection === 'models'
   const isSignalsActive = isConfigPage && configSection === 'signals'
   const isDecisionsActive = isConfigPage && configSection === 'decisions'
   const isBuildChildActive =
-    location.pathname === '/builder' ||
     isModelsActive ||
     isSignalsActive ||
     isDecisionsActive
@@ -79,7 +79,7 @@ const Layout: React.FC<LayoutProps> = ({ children, configSection, onConfigSectio
             <NavLink
               to="/playground"
               className={({ isActive }) =>
-                isActive ? `${styles.navLink} ${styles.navLinkActive} ${styles.playgroundActive}` : styles.navLink
+                isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
               }
             >
               Playground
@@ -95,6 +95,23 @@ const Layout: React.FC<LayoutProps> = ({ children, configSection, onConfigSectio
               Brain
             </NavLink>
 
+            {/* Primary: OpenClaw */}
+            <NavLink
+              to="/clawos"
+              className={({ isActive }) =>
+                isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
+              }
+            >
+              ClawOS
+            </NavLink>
+
+            <NavLink
+              to="/builder"
+              className={isBuilderActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink}
+            >
+              DSL
+            </NavLink>
+
             {/* Build Dropdown */}
             <div className={styles.navDropdown}>
               <button
@@ -104,7 +121,7 @@ const Layout: React.FC<LayoutProps> = ({ children, configSection, onConfigSectio
                   toggleDropdown('build')
                 }}
               >
-                Build
+                Manager
                 <svg
                   width="12"
                   height="12"
@@ -119,13 +136,6 @@ const Layout: React.FC<LayoutProps> = ({ children, configSection, onConfigSectio
               </button>
               {openDropdown === 'build' && (
                 <div className={styles.dropdownMenu}>
-                  <NavLink
-                    to="/builder"
-                    className={`${styles.dropdownItem} ${location.pathname === '/builder' ? styles.dropdownItemActive : ''}`}
-                    onClick={() => setOpenDropdown(null)}
-                  >
-                    Builder
-                  </NavLink>
                   <button
                     className={`${styles.dropdownItem} ${isModelsActive ? styles.dropdownItemActive : ''}`}
                     onClick={() => {
@@ -137,16 +147,6 @@ const Layout: React.FC<LayoutProps> = ({ children, configSection, onConfigSectio
                     Models
                   </button>
                   <button
-                    className={`${styles.dropdownItem} ${isSignalsActive ? styles.dropdownItemActive : ''}`}
-                    onClick={() => {
-                      onConfigSectionChange?.('signals')
-                      navigate('/config')
-                      setOpenDropdown(null)
-                    }}
-                  >
-                    Signals
-                  </button>
-                  <button
                     className={`${styles.dropdownItem} ${isDecisionsActive ? styles.dropdownItemActive : ''}`}
                     onClick={() => {
                       onConfigSectionChange?.('decisions')
@@ -156,19 +156,19 @@ const Layout: React.FC<LayoutProps> = ({ children, configSection, onConfigSectio
                   >
                     Decisions
                   </button>
+                  <button
+                    className={`${styles.dropdownItem} ${isSignalsActive ? styles.dropdownItemActive : ''}`}
+                    onClick={() => {
+                      onConfigSectionChange?.('signals')
+                      navigate('/config')
+                      setOpenDropdown(null)
+                    }}
+                  >
+                    Signals
+                  </button>
                 </div>
               )}
             </div>
-
-            {/* Primary: OpenClaw */}
-            <NavLink
-              to="/openclaw"
-              className={({ isActive }) =>
-                isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
-              }
-            >
-              OpenClaw Team
-            </NavLink>
 
             {/* Divider */}
             <div className={styles.navDivider} />
@@ -406,11 +406,11 @@ const Layout: React.FC<LayoutProps> = ({ children, configSection, onConfigSectio
             >
               Decisions
             </button>
+            <NavLink to="/clawos" className={styles.mobileNavLink} onClick={() => setMobileMenuOpen(false)}>
+              ClawOS
+            </NavLink>
             <NavLink to="/builder" className={styles.mobileNavLink} onClick={() => setMobileMenuOpen(false)}>
               Builder
-            </NavLink>
-            <NavLink to="/openclaw" className={styles.mobileNavLink} onClick={() => setMobileMenuOpen(false)}>
-              OpenClaw
             </NavLink>
 
             {/* Analysis section */}
