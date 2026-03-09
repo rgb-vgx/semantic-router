@@ -2,27 +2,27 @@
 sidebar_position: 8
 ---
 
-# Context Routing Tutorial
+# Hướng dẫn Định tuyến Ngữ cảnh
 
-This tutorial shows you how to use **Context Signals** (Token Count) to route requests based on their length.
+Hướng dẫn này hướng dẫn bạn cách sử dụng **Tín hiệu Ngữ cảnh** (Số lượng Mã thông báo) để định tuyến các yêu cầu dựa trên độ dài của chúng.
 
-This is useful for:
+Điều này hữu ích cho:
 
-- Routing short queries to faster, smaller models
-- Routing long documents/prompts to models with large context windows
-- Optimizing cost by using cheaper models for short tasks
+- Định tuyến các truy vấn ngắn đến các mô hình nhanh hơn, nhỏ hơn
+- Định tuyến các tài liệu/dấu nhắc dài đến các mô hình có cửa sổ ngữ cảnh lớn
+- Tối ưu hóa chi phí bằng cách sử dụng các mô hình rẻ hơn cho các tác vụ ngắn
 
-## Scenario
+## Kịch bản
 
-We want to:
+Chúng tôi muốn:
 
-1. Route short requests (< 4K tokens) to a fast model (`llama-3-8b`)
-2. Route medium requests (4K - 32K tokens) to a standard model (`llama-3-70b`)
-3. Route long requests (32K - 128K tokens) to a large-context model (`claude-3-opus`)
+1. Định tuyến các yêu cầu ngắn (< 4K mã thông báo) đến một mô hình nhanh (`llama-3-8b`)
+2. Định tuyến các yêu cầu trung bình (4K - 32K mã thông báo) đến một mô hình tiêu chuẩn (`llama-3-70b`)
+3. Định tuyến các yêu cầu dài (32K - 128K mã thông báo) đến một mô hình ngữ cảnh-lớn (`claude-3-opus`)
 
-## Step 1: Define Context Signals
+## Bước 1: Xác định Tín hiệu Ngữ cảnh
 
-Add `context_rules` to your `signals` configuration:
+Thêm `context_rules` vào cấu hình `signals` của bạn:
 
 ```yaml
 signals:
@@ -43,9 +43,9 @@ signals:
       description: "Long context requiring specialized handling"
 ```
 
-## Step 2: Define Decisions
+## Bước 2: Xác định Quyết định
 
-Create decisions that trigger based on these context signals:
+Tạo các quyết định được kích hoạt dựa trên các tín hiệu ngữ cảnh này:
 
 ```yaml
 decisions:
@@ -80,11 +80,11 @@ decisions:
       - model: "claude-3-opus"
 ```
 
-## Step 3: Combined Logic (Advanced)
+## Bước 3: Logic Kết hợp (Nâng cao)
 
-You can combine context signals with other signals (like domain or keyword).
+Bạn có thể kết hợp các tín hiệu ngữ cảnh với các tín hiệu khác (như miền hoặc từ khóa).
 
-**Example**: Route long **coding** tasks to a specialized long-context coding model:
+**Ví dụ**: Định tuyến các tác vụ **code** dài đến một mô hình code dài-ngữ cảnh chuyên dụng:
 
 ```yaml
 decisions:
@@ -101,16 +101,16 @@ decisions:
       - model: "deepseek-coder-v2"
 ```
 
-## How Token Counting Works
+## Cách Tính toán Mã thông báo Hoạt động
 
-- The router counts tokens **before** making a routing decision.
-- It uses a fast tokenizer compatible with most LLMs.
-- Suffixes like "K" (1000) and "M" (1,000,000) are supported for readability.
-- If a request matches multiple ranges (e.g., overlapping rules), all matching signals are active.
+- Router tính toán số mã thông báo **trước** khi đưa ra quyết định định tuyến.
+- Nó sử dụng một bộ mã hóa mã thông báo nhanh tương thích với hầu hết các LLM.
+- Các hậu tố như "K" (1000) và "M" (1.000.000) được hỗ trợ để dễ đọc.
+- Nếu một yêu cầu khớp với nhiều phạm vi (ví dụ: các quy tắc chồng lấn), tất cả các tín hiệu phù hợp đều hoạt động.
 
-## Monitoring
+## Giám sát
 
-You can monitor token distribution using the Prometheus metric:
+Bạn có thể giám sát phân phối mã thông báo bằng cách sử dụng mục quan sát Prometheus:
 `llm_context_token_count`
 
-This helps you tune your ranges based on actual traffic patterns.
+Điều này giúp bạn điều chỉnh các phạm vi của mình dựa trên các mẫu lưu lượng thực tế.

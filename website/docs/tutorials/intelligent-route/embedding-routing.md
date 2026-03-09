@@ -1,35 +1,35 @@
-# Embedding Based Routing
+# Định tuyến Dựa trên Nhúng
 
-This guide shows you how to route requests using semantic similarity with embedding models. Embedding routing matches user queries to predefined categories based on meaning rather than exact keywords, making it ideal for handling diverse phrasings and rapidly evolving categories.
+Hướng dẫn này hướng dẫn bạn cách định tuyến các yêu cầu bằng cách sử dụng tương đồng ngữ nghĩa với các mô hình nhúng. Định tuyến nhúng khớp các truy vấn người dùng với các danh mục được xác định trước dựa trên ý nghĩa thay vì các từ khóa chính xác, làm cho nó lý tưởng để xử lý các cách diễn đạt đa dạng và các danh mục đang phát triển nhanh chóng.
 
-## Key Advantages
+## Lợi ích chính
 
-- **Scalable**: Handles unlimited categories without retraining models
-- **Fast**: 10-50ms inference with efficient embedding models (Qwen3, Gemma)
-- **Flexible**: Add/remove categories by updating keyword lists, no model retraining
-- **Semantic**: Captures meaning beyond exact keyword matching
+- **Có thể mở rộng**: Xử lý các danh mục không giới hạn mà không cần huấn luyện lại mô hình
+- **Nhanh**: Suy luận 10-50ms với các mô hình nhúng hiệu quả (Qwen3, Gemma)
+- **Linh hoạt**: Thêm/xóa danh mục bằng cách cập nhật danh sách từ khóa, không cần huấn luyện lại mô hình
+- **Ngữ nghĩa**: Nắm bắt ý nghĩa vượt quá khớp từ khóa chính xác
 
-## What Problem Does It Solve?
+## Vấn đề nó giải quyết là gì?
 
-Keyword matching fails when users phrase questions differently. Embedding routing solves:
+Khớp từ khóa thất bại khi người dùng diễn đạt câu hỏi khác nhau. Định tuyến nhúng giải quyết:
 
-- **Paraphrase handling**: "How to install?" matches "installation guide" without exact words
-- **Intent detection**: Routes based on semantic meaning, not surface patterns
-- **Fuzzy matching**: Handles typos, abbreviations, informal language
-- **Dynamic categories**: Add new categories without retraining classification models
-- **Multilingual support**: Embeddings capture cross-lingual semantics
+- **Xử lý Paraphrase**: "Cách cài đặt?" khớp "hướng dẫn cài đặt" mà không có từ chính xác
+- **Phát hiện Ý định**: Định tuyến dựa trên ý nghĩa ngữ nghĩa, không phải các mẫu bề mặt
+- **Khớp Mờ**: Xử lý lỗi chính tả, viết tắt, ngôn ngữ không chính thức
+- **Danh mục Động**: Thêm danh mục mới mà không cần huấn luyện lại các mô hình phân loại
+- **Hỗ trợ Đa ngôn ngữ**: Nhúng nắm bắt ngữ nghĩa liên ngôn ngữ
 
-## When to Use
+## Khi nào sử dụng
 
-- **Customer support** with diverse query phrasings
-- **Product inquiries** where users ask the same thing many different ways
-- **Technical support** needing semantic understanding of error descriptions
-- **Rapidly evolving categories** where you need to add/update categories frequently
-- **Moderate latency tolerance** (10-50ms acceptable for better semantic accuracy)
+- **Hỗ trợ khách hàng** với các cách diễn đạt truy vấn đa dạng
+- **Truy vấn sản phẩm** nơi người dùng hỏi điều tương tự theo nhiều cách khác nhau
+- **Hỗ trợ kỹ thuật** cần hiểu ngữ nghĩa của mô tả lỗi
+- **Danh mục đang phát triển nhanh** nơi bạn cần thêm/cập nhật danh mục thường xuyên
+- **Dung sai độ trễ Trung bình** (10-50ms chấp nhận được để có độ chính xác ngữ nghĩa tốt hơn)
 
-## Configuration
+## Cấu hình
 
-Add embedding rules to your `config.yaml`:
+Thêm quy tắc nhúng vào `config.yaml` của bạn:
 
 ```yaml
 # Define embedding signals
@@ -115,19 +115,19 @@ decisions:
           system_prompt: "You are an account management specialist. Handle user account queries with care and security."
 ```
 
-## Embedding Models
+## Mô hình Nhúng
 
-- **qwen3**: High quality, 1024-dim, 32K context
-- **gemma**: Balanced, 768-dim, 8K context, Matryoshka support (128/256/512/768)
-- **auto**: Automatically selects based on quality/latency priorities
+- **qwen3**: Chất lượng cao, 1024-dim, ngữ cảnh 32K
+- **gemma**: Cân bằng, 768-dim, ngữ cảnh 8K, hỗ trợ Matryoshka (128/256/512/768)
+- **auto**: Tự động chọn dựa trên ưu tiên chất lượng/độ trễ
 
-## Aggregation Methods
+## Phương pháp Tổng hợp
 
-- **max**: Uses highest similarity score
-- **avg**: Uses average similarity across keywords
-- **any**: Matches if any keyword exceeds threshold
+- **max**: Sử dụng điểm tương đồng cao nhất
+- **avg**: Sử dụng mức trung bình tương đồng trên các từ khóa
+- **any**: Khớp nếu bất kỳ từ khóa nào vượt quá ngưỡng
 
-## Example Requests
+## Ví dụ Yêu cầu
 
 ```bash
 # Technical support query
@@ -147,41 +147,41 @@ curl -X POST http://localhost:8801/v1/chat/completions \
   }'
 ```
 
-## Real-World Use Cases
+## Các trường hợp sử dụng thực tế
 
-### 1. Customer Support (Scalable Categories)
+### 1. Hỗ trợ khách hàng (Danh mục Có thể mở rộng)
 
-**Problem**: Need to add new support categories weekly without retraining models
-**Solution**: Add new categories by updating keyword lists, embeddings handle semantic matching
-**Impact**: Deploy new categories in minutes vs weeks for model retraining
+**Vấn đề**: Cần thêm danh mục hỗ trợ mới hàng tuần mà không cần huấn luyện lại mô hình
+**Giải pháp**: Thêm danh mục mới bằng cách cập nhật danh sách từ khóa, nhúng xử lý khớp ngữ nghĩa
+**Tác động**: Triển khai danh mục mới trong vài phút so với tuần cho việc huấn luyện lại mô hình
 
-### 2. E-commerce Support (Fast Semantic Matching)
+### 2. Hỗ trợ Thương mại điện tử (Khớp Ngữ nghĩa Nhanh)
 
-**Problem**: "Where's my order?" vs "track package" vs "shipping status" all mean the same
-**Solution**: Gemma embeddings (10-20ms) route all variations to order tracking category
-**Impact**: 95% accuracy with 10-20ms latency, handles 5K+ queries/sec
+**Vấn đề**: "Đơn hàng của tôi ở đâu?" so với "theo dõi gói" so với "trạng thái vận chuyển" có cùng ý nghĩa
+**Giải pháp**: Nhúng Gemma (10-20ms) định tuyến tất cả các biến đổi đến danh mục theo dõi đơn hàng
+**Tác động**: Độ chính xác 95% với độ trễ 10-20ms, xử lý 5K+ truy vấn/giây
 
-### 3. SaaS Product Inquiries (Flexible Routing)
+### 3. Truy vấn Sản phẩm SaaS (Định tuyến Linh hoạt)
 
-**Problem**: Users ask about pricing in 100+ different ways
-**Solution**: Semantic similarity matches all variations to "pricing information" keywords
-**Impact**: Single category handles all pricing queries without explicit rules
+**Vấn đề**: Người dùng hỏi về giá theo 100+ cách khác nhau
+**Giải pháp**: Tương đồng ngữ nghĩa khớp tất cả các biến đổi với từ khóa "thông tin giá"
+**Tác động**: Danh mục duy nhất xử lý tất cả các truy vấn giá mà không cần quy tắc rõ ràng
 
-### 4. Startup Iteration (Rapid Category Updates)
+### 4. Lặp lại Khởi nghiệp (Cập nhật Danh mục Nhanh chóng)
 
-**Problem**: Product evolves rapidly, need to adjust categories daily
-**Solution**: Update embedding keywords in config, no model retraining required
-**Impact**: Category updates in seconds vs days for fine-tuning
+**Vấn đề**: Sản phẩm phát triển nhanh chóng, cần điều chỉnh danh mục hàng ngày
+**Giải pháp**: Cập nhật từ khóa nhúng trong cấu hình, không cần huấn luyện lại mô hình
+**Tác động**: Cập nhật danh mục trong vài giây so với ngày cho việc tinh chỉnh
 
-### 5. Multilingual Platform (Semantic Understanding)
+### 5. Nền tảng Đa ngôn ngữ (Hiểu biết Ngữ nghĩa)
 
-**Problem**: Same question in English, Spanish, Chinese needs same routing
-**Solution**: Embeddings capture cross-lingual semantics automatically
-**Impact**: Single category definition works across languages
+**Vấn đề**: Câu hỏi tương tự bằng tiếng Anh, Tây Ban Nha, Trung Quốc cần định tuyến giống nhau
+**Giải pháp**: Nhúng nắm bắt ngữ nghĩa liên ngôn ngữ tự động
+**Tác động**: Định nghĩa danh mục duy nhất hoạt động trên các ngôn ngữ
 
-## Model Selection Strategy
+## Chiến lược Lựa chọn Mô hình
 
-### Auto Mode (Recommended)
+### Chế độ Tự động (Được khuyến nghị)
 
 ```yaml
 model: "auto"
@@ -189,40 +189,40 @@ quality_priority: 0.7  # Favor accuracy
 latency_priority: 0.3  # Accept some latency
 ```
 
-- Automatically selects Qwen3 (high quality) or Gemma (fast) based on priorities
-- Balances accuracy vs speed per request
+- Tự động chọn Qwen3 (chất lượng cao) hoặc Gemma (nhanh) dựa trên ưu tiên
+- Cân bằng độ chính xác so với tốc độ cho mỗi yêu cầu
 
-### Qwen3 (High Quality)
+### Qwen3 (Chất lượng Cao)
 
 ```yaml
 model: "qwen3"
 dimension: 1024
 ```
 
-- Best for: Complex queries, subtle distinctions, high-value interactions
-- Latency: ~30-50ms per query
-- Use case: Account management, financial queries
+- Tốt nhất cho: Truy vấn phức tạp, sự phân biệt tinh tế, tương tác giá trị cao
+- Độ trễ: ~30-50ms cho mỗi truy vấn
+- Trường hợp sử dụng: Quản lý tài khoản, truy vấn tài chính
 
-### Gemma (Fast)
+### Gemma (Nhanh)
 
 ```yaml
 model: "gemma"
 dimension: 768  # or 512, 256, 128 for Matryoshka
 ```
 
-- Best for: High-throughput, simple categorization, cost-sensitive
-- Latency: ~10-20ms per query
-- Use case: Product inquiries, general support
+- Tốt nhất cho: Thông lượng cao, phân loại đơn giản, nhạy cảm chi phí
+- Độ trễ: ~10-20ms cho mỗi truy vấn
+- Trường hợp sử dụng: Truy vấn sản phẩm, hỗ trợ chung
 
-## Performance Characteristics
+## Đặc điểm Hiệu suất
 
-| Model | Dimension | Latency | Accuracy | Memory |
+| Mô hình | Chiều | Độ trễ | Độ chính xác | Bộ nhớ |
 |-------|-----------|---------|----------|--------|
-| Qwen3 | 1024 | 30-50ms | Highest | ~2.4GB |
-| Gemma | 768 | 10-20ms | High | ~1.2GB |
-| Gemma | 512 | 8-15ms | Medium | ~1.2GB |
-| Gemma | 256 | 5-10ms | Lower | ~1.2GB |
+| Qwen3 | 1024 | 30-50ms | Cao nhất | ~2.4GB |
+| Gemma | 768 | 10-20ms | Cao | ~1.2GB |
+| Gemma | 512 | 8-15ms | Trung bình | ~1.2GB |
+| Gemma | 256 | 5-10ms | Thấp hơn | ~1.2GB |
 
-## Reference
+## Tham chiếu
 
-See [embedding.yaml](https://github.com/vllm-project/semantic-router/blob/main/config/intelligent-routing/in-tree/embedding.yaml) for complete configuration.
+Xem [embedding.yaml](https://github.com/vllm-project/semantic-router/blob/main/config/intelligent-routing/in-tree/embedding.yaml) để xem cấu hình hoàn chỉnh.

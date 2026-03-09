@@ -1,52 +1,52 @@
-# Milvus Semantic Cache
+# Bộ Nhớ Đệm Ngữ Nghĩa Milvus
 
-The Milvus cache backend provides persistent, distributed semantic caching using the Milvus vector database. This is the recommended solution for production deployments requiring high availability, scalability, and data persistence.
+Phần phụ trợ bộ nhớ đệm Milvus cung cấp bộ nhớ đệm ngữ nghĩa phân tán, bền vững bằng cách sử dụng cơ sở dữ liệu vector Milvus. Đây là giải pháp được khuyến nghị cho các triển khai sản xuất yêu cầu tính sẵn sàng cao, khả năng mở rộng và tính bền vững của dữ liệu.
 
-## Overview
+## Tổng Quan
 
-Milvus cache is ideal for:
+Bộ nhớ đệm Milvus lý tưởng cho:
 
-- **Production environments** with high availability requirements
-- **Distributed deployments** across multiple instances
-- **Large-scale applications** with millions of cached queries
-- **Persistent storage** requirements where cache survives restarts
-- **Advanced vector operations** and similarity search optimization
+- **Môi trường sản xuất** có yêu cầu về tính sẵn sàng cao
+- **Triển khai phân tán** trên nhiều phiên bản
+- **Ứng dụng quy mô lớn** với hàng triệu truy vấn được lưu trong bộ nhớ đệm
+- **Yêu cầu lưu trữ bền vững** nơi bộ nhớ đệm tồn tại qua nhiều lần khởi động lại
+- **Các hoạt động vector nâng cao** và tối ưu hóa tìm kiếm tương tự
 
-## Architecture
+## Kiến Trúc
 
 ```mermaid
 graph TB
-    A[Client Request] --> B[Semantic Cache Instance 1]
-    A --> C[Semantic Cache Instance 2]
-    A --> D[Semantic Cache Instance N]
+    A[Yêu cầu từ máy khách] --> B[Phiên bản Bộ Nhớ Đệm Ngữ Nghĩa 1]
+    A --> C[Phiên bản Bộ Nhớ Đệm Ngữ Nghĩa 2]
+    A --> D[Phiên bản Bộ Nhớ Đệm Ngữ Nghĩa N]
 
-    B --> E[Generate Query Embedding]
+    B --> E[Tạo Nhúng Truy Vấn]
     C --> E
     D --> E
 
-    E --> F[Milvus Vector Database]
-    F --> G{Similar Vector Found?}
+    E --> F[Cơ Sở Dữ Liệu Vector Milvus]
+    F --> G{Vector Tương Tự Được Tìm Thấy?}
 
-    G -->|Hit| H[Return Cached Response]
-    G -->|Miss| I[Forward to LLM]
+    G -->|Truy Cập| H[Trả Lại Phản Hồi Được Lưu Trong Bộ Nhớ Đệm]
+    G -->|Miss| I[Chuyển Tiếp Đến LLM]
 
-    I --> J[LLM Processing]
-    J --> K[Store Vector + Response in Milvus]
-    J --> L[Return Response]
+    I --> J[Xử Lý LLM]
+    J --> K[Lưu Trữ Vector + Phản Hồi Trong Milvus]
+    J --> L[Trả Lại Phản Hồi]
 
-    K --> M[Persistent Storage]
-    H --> N[Update Hit Metrics]
+    K --> M[Lưu Trữ Bền Vững]
+    H --> N[Cập Nhật Số Liệu Truy Cập]
 
     style H fill:#90EE90
     style K fill:#FFB6C1
     style M fill:#DDA0DD
 ```
 
-## Configuration
+## Cấu Hình
 
-### Milvus Backend Configuration
+### Cấu Hình Phụ Trợ Milvus
 
-Configure in `config/semantic-cache/milvus.yaml`:
+Cấu hình trong `config/semantic-cache/milvus.yaml`:
 
 ```yaml
 # config/semantic-cache/milvus.yaml
@@ -62,7 +62,7 @@ connection:
 
 collection:
   name: "semantic_cache"
-  dimension: 384  # Must match embedding model dimension
+  dimension: 384  # Phải khớp với chiều mô hình nhúng
   index_type: "IVF_FLAT"
   metric_type: "COSINE"
   nlist: 1024
@@ -79,24 +79,24 @@ development:
   log_level: "info"
 ```
 
-## Setup and Deployment
+## Thiết Lập và Triển Khai
 
-Start Milvus Service:
+Bắt Đầu Dịch Vụ Milvus:
 
 ```bash
-# Using Docker
+# Sử dụng Docker
 make start-milvus
 
-# Verify Milvus is running
+# Xác minh Milvus đang chạy
 curl http://localhost:19530/health
 ```
 
-### 2. Configure Semantic Router
+### 2. Cấu Hình Bộ Định Tuyến Ngữ Nghĩa
 
-Basic Milvus Configuration:
+Cấu Hình Milvus Cơ Bản:
 
-- Set `backend_type: "milvus"` in `config/config.yaml`
-- Set `backend_config_path: "config/semantic-cache/milvus.yaml"` in `config/config.yaml`
+- Đặt `backend_type: "milvus"` trong `config/config.yaml`
+- Đặt `backend_config_path: "config/semantic-cache/milvus.yaml"` trong `config/config.yaml`
 
 ```yaml
 # config/config.yaml
@@ -108,20 +108,20 @@ semantic_cache:
   ttl_seconds: 7200
 ```
 
-### Decision-Level Configuration (Plugin-Based)
+### Cấu Hình Cấp Quyết Định (Dựa Trên Plugin)
 
-You can also configure Milvus cache at the decision level using plugins:
+Bạn cũng có thể cấu hình bộ nhớ đệm Milvus ở cấp quyết định bằng các plugin:
 
 ```yaml
 signals:
   domains:
     - name: "math"
-      description: "Mathematical queries"
+      description: "Truy vấn toán học"
       mmlu_categories: ["math"]
 
 decisions:
   - name: math_route
-    description: "Route math queries with strict caching"
+    description: "Định tuyến truy vấn toán học với bộ nhớ đệm nghiêm ngặt"
     priority: 100
     rules:
       operator: "AND"
@@ -135,45 +135,45 @@ decisions:
       - type: "semantic-cache"
         configuration:
           enabled: true
-          similarity_threshold: 0.95  # Very strict for math accuracy
+          similarity_threshold: 0.95  # Rất nghiêm ngặt cho độ chính xác toán học
 ```
 
-Run Semantic Router:
+Chạy Bộ Định Tuyến Ngữ Nghĩa:
 
 ```bash
-# Start router
+# Máy chủ bắt đầu
 make run-router
 ```
 
-Run EnvoyProxy:
+Chạy EnvoyProxy:
 
 ```bash
-# Start Envoy proxy
+# Bắt đầu proxy Envoy
 make run-envoy
 ```
 
-### 4. Test Milvus Cache
+### 4. Kiểm Tra Bộ Nhớ Đệm Milvus
 
 ```bash
-# Send identical requests to see cache hits
+# Gửi các yêu cầu giống hệt nhau để xem truy cập bộ nhớ đệm
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "MoM",
-    "messages": [{"role": "user", "content": "What is machine learning?"}]
+    "messages": [{"role": "user", "content": "Machine learning là gì?"}]
   }'
 
-# Send similar request (should hit cache due to semantic similarity)
+# Gửi yêu cầu tương tự (nên truy cập bộ nhớ đệm do tương tự ngữ nghĩa)
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "MoM",
-    "messages": [{"role": "user", "content": "Explain machine learning"}]
+    "messages": [{"role": "user", "content": "Giải thích machine learning"}]
   }'
 ```
 
-## Next Steps
+## Các Bước Tiếp Theo
 
-- **[In-Memory Cache](./in-memory-cache.md)** - Compare with in-memory caching
-- **[Observability](../observability/metrics.md)** - Monitor Milvus performance
-- **[Kubernetes Integration](../../installation/milvus.md)** - Deploy Milvus on Kubernetes
+- **[In-Memory Cache](./in-memory-cache.md)** - So sánh với bộ nhớ đệm trong bộ nhớ
+- **[Khả Năng Quan Sát được](../observability/metrics.md)** - Giám sát hiệu suất Milvus
+- **[Tích Hợp Kubernetes](../../installation/milvus.md)** - Triển khai Milvus trên Kubernetes

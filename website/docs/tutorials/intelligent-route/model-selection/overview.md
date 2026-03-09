@@ -1,60 +1,60 @@
-# Model Selection Overview
+# Khí Quyển Lựa Chọn Mô Hình
 
-Model selection is an advanced feature of vLLM Semantic Router that automatically chooses the best LLM from multiple candidates based on learned preferences, query similarity, and cost-quality optimization.
+Lựa chọn mô hình là một tính năng nâng cao của bộ định tuyến ngữ nghĩa vLLM tự động chọn LLM tốt nhất từ nhiều ứng viên dựa trên các ưu tiên đã học, tương đồng truy vấn và tối ưu hóa chi phí-chất lượng.
 
-The semantic router supports **9 selection algorithms** across two categories:
+Bộ định tuyến ngữ nghĩa hỗ trợ **9 thuật toán lựa chọn** trên hai loại:
 
-- **Core algorithms**: Static, Latency-Aware, Elo, RouterDC, AutoMix, Hybrid
-- **RL-driven algorithms**: Thompson Sampling, GMTRouter, Router-R1
+- **Các thuật toán cơ bản**: Tĩnh, Nhận Thức Độ Trễ, Elo, RouterDC, AutoMix, Hybrid
+- **Các thuật toán được điều khiển bởi RL**: Thompson Sampling, GMTRouter, Router-R1
 
-## What Problem Does It Solve?
+## Vấn Đề Nó Giải Quyết?
 
-When you have multiple LLM backends (e.g., GPT-4, Claude, Llama, Mistral), you face a challenge: **which model should handle each request?**
+Khi bạn có nhiều backend LLM (ví dụ: GPT-4, Claude, Llama, Mistral), bạn đối mặt với một thách thức: **mô hình nào sẽ xử lý từng yêu cầu?**
 
-Traditional approaches:
+Các phương pháp truyền thống:
 
-- **Static routing**: Always use the same model (simple but suboptimal)
-- **Round-robin**: Distribute evenly (ignores model strengths)
-- **Random**: No intelligence (wastes resources)
+- **Định tuyến tĩnh**: Luôn sử dụng cùng một mô hình (đơn giản nhưng không tối ưu)
+- **Round-robin**: Phân phối đều (bỏ qua điểm mạnh mô hình)
+- **Ngẫu nhiên**: Không có trí tuệ (lãng phí tài nguyên)
 
-Model selection solves this by **intelligently matching queries to models** based on:
+Lựa chọn mô hình giải quyết vấn đề bằng cách **khớp thông minh các truy vấn với các mô hình** dựa trên:
 
-1. **Learned quality preferences** (Elo ratings from user feedback)
-2. **Query-model similarity** (RouterDC embeddings)
-3. **Cost-quality tradeoffs** (AutoMix optimization)
-4. **Combined signals** (Hybrid approach)
+1. **Ưu tiên chất lượng đã học** (xếp hạng Elo từ phản hồi người dùng)
+2. **Tương đồng truy vấn-mô hình** (nhúng RouterDC)
+3. **Sự đánh đổi chi phí-chất lượng** (tối ưu hóa AutoMix)
+4. **Tín hiệu kết hợp** (phương pháp Hybrid)
 
-## Available Algorithms
+## Các Thuật Toán Có Sẵn
 
-### Core Algorithms
+### Các Thuật Toán Cơ Bản
 
-| Algorithm | Best For | Key Benefit |
+| Thuật Toán | Tốt Cho | Lợi Ích Chính |
 |-----------|----------|-------------|
-| [**Static**](./static.md) | Simple deployments | Predictable, zero overhead |
-| **Latency-Aware** | Latency-sensitive routing | Selects by TPOT/TTFT percentiles |
-| [**Elo**](./elo.md) | Learning from feedback | Adapts to user preferences |
-| [**RouterDC**](./router-dc.md) | Query-model matching | Matches specialties to queries |
-| [**AutoMix**](./automix.md) | Cost optimization | Balances quality and cost |
-| [**Hybrid**](./hybrid.md) | Complex requirements | Combines all methods |
+| [**Tĩnh**](./static.md) | Triển khai đơn giản | Dự đoán được, chi phí chung bằng không |
+| **Nhận Thức Độ Trễ** | Định tuyến nhạy cảm với độ trễ | Chọn theo phần trăm TPOT/TTFT |
+| [**Elo**](./elo.md) | Học từ phản hồi | Thích ứng với ưu tiên người dùng |
+| [**RouterDC**](./router-dc.md) | Khớp truy vấn-mô hình | Khớp chuyên môn với truy vấn |
+| [**AutoMix**](./automix.md) | Tối ưu hóa chi phí | Cân bằng chất lượng và chi phí |
+| [**Hybrid**](./hybrid.md) | Yêu cầu phức tạp | Kết hợp tất cả các phương pháp |
 
-### RL-Driven Algorithms
+### Các Thuật Toán Được Điều Khiển Bởi RL
 
-| Algorithm | Best For | Key Benefit |
+| Thuật Toán | Tốt Cho | Lợi Ích Chính |
 |-----------|----------|-------------|
-| [**Thompson Sampling**](./thompson-sampling.md) | Exploration/exploitation | Bayesian adaptive learning |
-| [**GMTRouter**](./gmtrouter.md) | Personalization | Per-user preference learning |
-| [**Router-R1**](./router-r1.md) | Complex reasoning | LLM-powered routing decisions |
+| [**Thompson Sampling**](./thompson-sampling.md) | Khám phá/Khai thác | Học thích ứng Bayes |
+| [**GMTRouter**](./gmtrouter.md) | Cá Nhân Hóa | Học ưa thích cho mỗi người dùng |
+| [**Router-R1**](./router-r1.md) | Suy luận phức tạp | Quyết định định tuyến do LLM cung cấp |
 
-## Quick Start
+## Khởi Động Nhanh
 
-### Basic Configuration (Per-Decision)
+### Cấu Hình Cơ Bản (Mỗi Quyết Định)
 
-Model selection is configured per-decision, allowing different strategies for different query types:
+Lựa chọn mô hình được cấu hình cho mỗi quyết định, cho phép các chiến lược khác nhau cho các loại truy vấn khác nhau:
 
 ```yaml
 decisions:
   - name: tech
-    description: "Technical queries"
+    description: "Truy vấn kỹ thuật"
     priority: 10
     rules:
       operator: "OR"
@@ -66,24 +66,24 @@ decisions:
       - model: "phi4"
       - model: "gemma3:27b"
     algorithm:
-      type: "elo"  # Use Elo rating for this decision
+      type: "elo"  # Sử dụng xếp hạng Elo cho quyết định này
       elo:
         k_factor: 32
         category_weighted: true
 ```
 
-### Algorithm Types
+### Loại Thuật Toán
 
-#### Static (Default)
-Uses the first model in `modelRefs`. No learning, fully deterministic.
+#### Tĩnh (Mặc Định)
+Sử dụng mô hình đầu tiên trong `modelRefs`. Không học, hoàn toàn xác định.
 
 ```yaml
 algorithm:
   type: "static"
 ```
 
-#### Latency-Aware
-Selects the fastest model by TPOT/TTFT percentiles.
+#### Nhận Thức Độ Trễ
+Chọn mô hình nhanh nhất theo phần trăm TPOT/TTFT.
 
 ```yaml
 algorithm:
@@ -93,8 +93,8 @@ algorithm:
     ttft_percentile: 10
 ```
 
-#### Elo Rating
-Learns from user feedback to rank models by quality.
+#### Xếp Hạng Elo
+Tìm hiểu từ phản hồi người dùng để xếp hạng mô hình theo chất lượng.
 
 ```yaml
 algorithm:
@@ -105,7 +105,7 @@ algorithm:
 ```
 
 #### RouterDC
-Matches query embeddings to model descriptions.
+Khớp các nhúng truy vấn với mô tả mô hình.
 
 ```yaml
 algorithm:
@@ -116,7 +116,7 @@ algorithm:
 ```
 
 #### AutoMix
-Optimizes cost-quality tradeoff using POMDP.
+Tối ưu hóa sự đánh đổi chi phí-chất lượng bằng POMDP.
 
 ```yaml
 algorithm:
@@ -126,7 +126,7 @@ algorithm:
 ```
 
 #### Hybrid
-Combines all methods with configurable weights.
+Kết hợp tất cả các phương pháp với trọng số có thể cấu hình.
 
 ```yaml
 algorithm:
@@ -138,75 +138,75 @@ algorithm:
     cost_weight: 0.2
 ```
 
-## How It Works
+## Cách Hoạt Động
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         User Query                                   │
-│                    "Explain quantum computing"                       │
+│                         Truy Vấn Người Dùng                         │
+│                    "Giải thích máy tính lượng tử"                   │
 └─────────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                      Decision Matching                               │
-│                 Decision "tech" matches → 3 models                   │
+│                      Khớp Quyết Định                                │
+│                 Quyết Định "tech" khớp → 3 mô hình                 │
 └─────────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                    Selection Algorithm                               │
+│                    Thuật Toán Lựa Chọn                              │
 │                                                                      │
 │  algorithm.type: "elo"                                              │
 │                                                                      │
-│  ┌─────────────────────────────────────────────────────────┐        │
-│  │ EloSelector.Select()                                    │        │
-│  │                                                         │        │
-│  │ Model Ratings:                                          │        │
-│  │   llama3.2:3b  → 1468 (0 wins, 2 losses)               │        │
-│  │   phi4         → 1501 (3 wins, 2 losses)               │        │
-│  │   gemma3:27b   → 1531 (5 wins, 1 loss) ← HIGHEST       │        │
-│  └─────────────────────────────────────────────────────────┘        │
+│  ┌─────────────────────────────────────────────────────┐            │
+│  │ EloSelector.Select()                                │            │
+│  │                                                     │            │
+│  │ Xếp hạng Mô hình:                                   │            │
+│  │   llama3.2:3b  → 1468 (0 thắng, 2 thua)             │            │
+│  │   phi4         → 1501 (3 thắng, 2 thua)             │            │
+│  │   gemma3:27b   → 1531 (5 thắng, 1 thua) ← CAO NHẤT  │            │
+│  └─────────────────────────────────────────────────────┘            │
 └─────────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                      Selected: gemma3:27b                            │
-│                   (highest Elo rating: 1531)                         │
+│                      Được Chọn: gemma3:27b                          │
+│                   (xếp hạng Elo cao nhất: 1531)                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-## Choosing an Algorithm
+## Chọn Thuật Toán
 
-See [Choosing the Right Algorithm](./choosing-algorithm.md) for detailed guidance.
+Xem [Chọn Thuật Toán Phù Hợp](./choosing-algorithm.md) để hướng dẫn chi tiết.
 
-**Quick Decision Tree:**
+**Cây Ra Quyết Định Nhanh:**
 
-1. **Just getting started?** → Use `static` (default)
-2. **Need latency-based routing?** → Use `latency_aware`
-3. **Have user feedback?** → Use `elo`
-4. **Have model descriptions?** → Use `router_dc`
-5. **Want cost optimization?** → Use `automix`
-6. **Need everything?** → Use `hybrid`
+1. **Mới bắt đầu?** → Sử dụng `static` (mặc định)
+2. **Cần định tuyến dựa trên độ trễ?** → Sử dụng `latency_aware`
+3. **Có phản hồi người dùng?** → Sử dụng `elo`
+4. **Có mô tả mô hình?** → Sử dụng `router_dc`
+5. **Muốn tối ưu hóa chi phí?** → Sử dụng `automix`
+6. **Cần tất cả mọi thứ?** → Sử dụng `hybrid`
 
-## Related Features
+## Các Tính Năng Liên Quan
 
-- **User Feedback Routing** - Collect feedback signals via `/api/v1/feedback` endpoint
-- **Preference Routing** - Route based on user preferences in the system
-- **Domain Routing** - Route by topic category using embedding classification
+- **Định Tuyến Phản Hồi Người Dùng** - Collect tín hiệu phản hồi qua `/api/v1/feedback`
+- **Định Tuyến Ưu Tiên** - Định tuyến dựa trên ưu tiên người dùng trong hệ thống
+- **Định Tuyến Miền** - Định tuyến theo danh mục chủ đề bằng phân loại nhúng
 
-## Reference Papers
+## Bài Báo Tham Khảo
 
-The selection algorithms are based on these research papers:
+Các thuật toán lựa chọn dựa trên những bài báo nghiên cứu này:
 
-### Core Algorithms
+### Các Thuật Toán Cơ Bản
 
-- **Elo**: Inspired by preference-based routing concepts; see [RouteLLM](https://arxiv.org/abs/2406.18665) (Ong et al., ICLR 2025) which trains static routers achieving ~50% cost reduction (2x savings)
-- **RouterDC**: [Query-Based Router by Dual Contrastive Learning](https://arxiv.org/abs/2409.19886) (NeurIPS 2024) - +2.76% accuracy improvement
-- **AutoMix**: [Automatically Mixing Language Models](https://arxiv.org/abs/2310.12963) (NeurIPS 2024) - >50% cost reduction
-- **Hybrid**: [Cost-Efficient Quality-Aware Query Routing](https://arxiv.org/abs/2404.14618) (ICLR 2024) - 40% fewer expensive calls
+- **Elo**: Được lấy cảm hứng từ các khái niệm định tuyến dựa trên ưu tiên; xem [RouteLLM](https://arxiv.org/abs/2406.18665) (Ong et al., ICLR 2025) đạt giảm 50% chi phí
+- **RouterDC**: [Bộ Định Tuyến Dựa Trên Truy Vấn Bằng Học Tập Đối Lập Kép](https://arxiv.org/abs/2409.19886) (NeurIPS 2024) - cải tiến chính xác +2.76%
+- **AutoMix**: [Tự Động Trộn Mô Hình Ngôn Ngữ](https://arxiv.org/abs/2310.12963) (NeurIPS 2024) - giảm chi phí >50%
+- **Hybrid**: [Định Tuyến Truy Vấn Có Hiệu Suất Chi Phí Lý-Nhận Thức](https://arxiv.org/abs/2404.14618) (ICLR 2024) - 40% ít gọi mô hình đắt tiền hơn
 
-### RL-Driven Algorithms
+### Các Thuật Toán Được Điều Khiển Bởi RL
 
-- **Thompson Sampling**: Classical multi-armed bandit approach; see [A Tutorial on Thompson Sampling](https://arxiv.org/abs/1707.02038) (Russo, Van Roy et al.)
-- **GMTRouter**: [GMTRouter: Personalized LLM Router over Multi-turn User Interactions](https://arxiv.org/abs/2511.08590) (Wang et al.) - 0.9-21.6% accuracy improvement
-- **Router-R1**: [Router-R1: Teaching LLMs Multi-Round Routing and Aggregation via RL](https://arxiv.org/abs/2506.09033) (Hu et al., NeurIPS 2025)
+- **Thompson Sampling**: Phương pháp cờ ba vũ trang đa cánh cổ điển; xem [Hướng Dẫn về Thompson Sampling](https://arxiv.org/abs/1707.02038) (Russo, Van Roy et al.)
+- **GMTRouter**: [GMTRouter: Bộ Định Tuyến LLM Được Cá Nhân Hóa Qua Tương Tác Người Dùng Nhiều Lượt](https://arxiv.org/abs/2511.08590) (Wang et al.) - cải tiến chính xác 0.9-21.6%
+- **Router-R1**: [Router-R1: Dạy LLM Định Tuyến và Tổng Hợp Nhiều Vòng qua RL](https://arxiv.org/abs/2506.09033) (Hu et al., NeurIPS 2025)

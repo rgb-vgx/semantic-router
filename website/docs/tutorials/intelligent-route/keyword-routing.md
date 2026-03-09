@@ -1,35 +1,35 @@
-# Keyword Based Routing
+# Định tuyến Dựa trên Từ khóa
 
-This guide shows you how to route requests using explicit keyword rules and regex patterns. Keyword routing provides transparent, auditable routing decisions that are essential for compliance, security, and scenarios requiring explainable AI.
+Hướng dẫn này hướng dẫn bạn cách định tuyến các yêu cầu bằng cách sử dụng các quy tắc từ khóa rõ ràng và các mẫu regex. Định tuyến từ khóa cung cấp các quyết định định tuyến minh bạch, có thể kiểm toán được và essential cho tuân thủ, an ninh và các tình huống cần AI có thể giải thích.
 
-## Key Advantages
+## Lợi ích chính
 
-- **Transparent**: Routing decisions are fully explainable and auditable
-- **Compliant**: Deterministic behavior meets regulatory requirements (GDPR, HIPAA, SOC2)
-- **Fast**: Sub-millisecond latency, no ML inference overhead
-- **Interpretable**: Clear rules make debugging and validation straightforward
+- **Minh bạch**: Các quyết định định tuyến có thể giải thích hoàn toàn và có thể kiểm toán được
+- **Tuân thủ**: Hành vi quy định gặp các yêu cầu quy định (GDPR, HIPAA, SOC2)
+- **Nhanh**: Độ trễ dưới một mili giây, không có chi phí suy luận ML
+- **Có thể giải thích**: Các quy tắc rõ ràng làm cho gỡ lỗi và xác thực đơn giản
 
-## What Problem Does It Solve?
+## Vấn đề nó giải quyết là gì?
 
-ML-based classification is a black box that's hard to audit and explain. Keyword routing provides:
+Phân loại dựa trên ML là một hộp đen khó kiểm toán và giải thích. Định tuyến từ khóa cung cấp:
 
-- **Explainable decisions**: Know exactly why a query was routed to a specific category
-- **Regulatory compliance**: Auditors can verify routing logic meets requirements
-- **Deterministic behavior**: Same input always produces same output
-- **Zero latency**: No model inference, instant classification
-- **Precise control**: Explicit rules for security, compliance, and business logic
+- **Quyết định có thể giải thích**: Biết chính xác tại sao một truy vấn được định tuyến đến một danh mục cụ thể
+- **Tuân thủ quy định**: Các nhân viên kiểm toán có thể xác minh logic định tuyến đáp ứng các yêu cầu
+- **Hành vi quy định**: Cùng một đầu vào luôn tạo ra cùng một đầu ra
+- **Độ trễ không**: Không có suy luận mô hình, phân loại tức thời
+- **Kiểm soát chính xác**: Các quy tắc rõ ràng cho an ninh, tuân thủ và logic kinh doanh
 
-## When to Use
+## Khi nào sử dụng
 
-- **Regulated industries** (finance, healthcare, legal) requiring audit trails
-- **Security/compliance** scenarios needing deterministic PII detection
-- **High-throughput systems** where sub-millisecond latency is critical
-- **Urgent/priority routing** with clear keyword indicators
-- **Structured data** (emails, IDs, file paths) matching regex patterns
+- **Các ngành được quản lý** (tài chính, chăm sóc sức khỏe, pháp lý) yêu cầu dấu vết kiểm toán
+- **An ninh/Tuân thủ** các tình huống cần phát hiện PII quy định
+- **Các hệ thống thông lượng cao** nơi độ trễ dưới một mili giây là tối quan trọng
+- **Định tuyến khẩn cấp/ưu tiên** với các chỉ thị từ khóa rõ ràng
+- **Dữ liệu có cấu trúc** (email, ID, đường dẫn tệp) khớp các mẫu regex
 
-## Configuration
+## Cấu hình
 
-Add keyword signals to your `config.yaml`:
+Thêm tín hiệu từ khóa vào `config.yaml` của bạn:
 
 ```yaml
 # Define keyword signals
@@ -101,15 +101,15 @@ decisions:
           system_prompt: "This query appears to be spam. Please provide a polite response."
 ```
 
-## Methods
+## Phương pháp
 
-Each keyword rule can use a different matching method via the `method` field:
+Mỗi quy tắc từ khóa có thể sử dụng một phương pháp khớp khác nhau thông qua trường `method`:
 
-| Method | Best For | Typo Tolerant | Config Fields |
+| Phương pháp | Tốt nhất cho | Dung sai Typo | Các trường Cấu hình |
 |--------|----------|:---:|---------------|
-| `regex` (default) | Exact patterns, word boundaries | No | — |
-| `bm25` | Topic detection with large keyword lists | No | `bm25_threshold` |
-| `ngram` | Fuzzy matching, typo tolerance | **Yes** | `ngram_threshold`, `ngram_arity` |
+| `regex` (mặc định) | Các mẫu chính xác, ranh giới từ | Không | — |
+| `bm25` | Phát hiện chủ đề với danh sách từ khóa lớn | Không | `bm25_threshold` |
+| `ngram` | Khớp mờ, dung sai typo | **Có** | `ngram_threshold`, `ngram_arity` |
 
 ```yaml
 keyword_rules:
@@ -137,15 +137,15 @@ keyword_rules:
     case_sensitive: false
 ```
 
-BM25 and N-gram classification is backed by Rust crates (`bm25`, `ngrammatic`) via the `nlp-binding` FFI, so performance remains sub-millisecond.
+Phân loại BM25 và N-gram được hỗ trợ bởi các gói Rust (`bm25`, `ngrammatic`) thông qua FFI `nlp-binding`, vì vậy hiệu suất vẫn dưới một mili giây.
 
-## Operators
+## Toán tử
 
-- **OR**: Matches if any keyword is found
-- **AND**: Matches only if all keywords are found
-- **NOR**: Matches only if none of the keywords are found (exclusion)
+- **OR**: Khớp nếu tìm thấy bất kỳ từ khóa nào
+- **AND**: Khớp chỉ khi tìm thấy tất cả các từ khóa
+- **NOR**: Khớp chỉ khi không tìm thấy bất kỳ từ khóa nào (loại trừ)
 
-## Example Requests
+## Ví dụ Yêu cầu
 
 ```bash
 # Urgent request (matches "urgent")
@@ -165,46 +165,46 @@ curl -X POST http://localhost:8801/v1/chat/completions \
   }'
 ```
 
-## Real-World Use Cases
+## Các trường hợp sử dụng thực tế
 
-### 1. Financial Services (Transparent Compliance)
+### 1. Dịch vụ Tài chính (Tuân thủ Minh bạch)
 
-**Problem**: Regulators require explainable routing decisions for audit trails
-**Solution**: Keyword rules provide clear "why" for each routing decision (e.g., "SSN" keyword → secure handler)
-**Impact**: Passed SOC2 audit, complete decision transparency
+**Vấn đề**: Những người kiểm toán yêu cầu các quyết định định tuyến có thể giải thích cho dấu vết kiểm toán
+**Giải pháp**: Quy tắc từ khóa cung cấp "tại sao" rõ ràng cho mỗi quyết định định tuyến (ví dụ: từ khóa "SSN" → trình xử lý bảo mật)
+**Tác động**: Kiểm toán SOC2 đã vượt qua, minh bạch quyết định hoàn toàn
 
-### 2. Healthcare Platform (Compliant PII Detection)
+### 2. Nền tảng Chăm sóc sức khỏe (Phát hiện PII Tuân thủ)
 
-**Problem**: HIPAA requires deterministic, auditable PII detection
-**Solution**: AND operator detects multiple PII indicators with documented rules
-**Impact**: 100% deterministic, full audit trail for compliance
+**Vấn đề**: HIPAA yêu cầu phát hiện PII có thể xác định, có thể kiểm toán
+**Giải pháp**: Toán tử AND phát hiện nhiều chỉ báo PII với các quy tắc được ghi chép
+**Tác động**: Quy định 100%, dấu vết kiểm toán đầy đủ để tuân thủ
 
-### 3. High-Frequency Trading (Sub-millisecond Routing)
+### 3. Giao dịch Tần số cao (Định tuyến Dưới một mili giây)
 
-**Problem**: Need &lt;1ms classification for real-time market data routing
-**Solution**: Keyword matching provides instant classification without ML overhead
-**Impact**: 0.1ms latency, handles 100K+ requests/sec
+**Vấn đề**: Cần phân loại <1ms cho định tuyến dữ liệu thị trường thời gian thực
+**Giải pháp**: Khớp từ khóa cung cấp phân loại tức thời mà không có chi phí ML
+**Tác động**: Độ trễ 0,1ms, xử lý 100K+ yêu cầu/giây
 
-### 4. Government Services (Interpretable Rules)
+### 4. Dịch vụ Chính phủ (Quy tắc Có thể giải thích)
 
-**Problem**: Citizens need to understand why requests were routed/rejected
-**Solution**: Clear keyword rules can be explained in plain language
-**Impact**: Reduced complaints, transparent decision-making
+**Vấn đề**: Những người dân cần hiểu tại sao các yêu cầu được định tuyến/từ chối
+**Giải pháp**: Quy tắc từ khóa rõ ràng có thể được giải thích bằng ngôn ngữ thường
+**Tác động**: Khiếu nại giảm, ra quyết định minh bạch
 
-### 5. Enterprise Security (Transparent Threat Detection)
+### 5. An ninh Doanh nghiệp (Phát hiện Mối đe dọa Minh bạch)
 
-**Problem**: Security team needs to understand why queries were flagged
-**Solution**: Explicit keyword/regex rules for threat patterns with clear documentation
-**Impact**: Security team can validate and update rules confidently
+**Vấn đề**: Nhóm bảo mật cần hiểu tại sao các truy vấn được gắn cờ
+**Giải pháp**: Quy tắc từ khóa/regex rõ ràng cho các mẫu mối đe dọa với tài liệu rõ ràng
+**Tác động**: Nhóm an ninh có thể xác thực và cập nhật quy tắc một cách tự tin
 
-## Performance Benefits
+## Lợi ích Hiệu suất
 
-- **Sub-millisecond latency**: No ML inference overhead
-- **High throughput**: 100K+ requests/sec on single core
-- **Predictable costs**: No GPU/embedding model required
-- **Zero cold start**: Instant classification on first request
+- **Độ trễ dưới một mili giây**: Không có chi phí suy luận ML
+- **Thông lượng cao**: 100K+ yêu cầu/giây trên một lõi
+- **Chi phí Dự đoán được**: Không cần GPU/mô hình nhúng
+- **Bắt đầu lạnh bằng không**: Phân loại tức thời trên yêu cầu đầu tiên
 
-## Reference
+## Tham chiếu
 
-- [keyword.yaml](https://github.com/vllm-project/semantic-router/blob/main/config/intelligent-routing/in-tree/keyword.yaml) — regex-only configuration
-- [keyword-nlp.yaml](https://github.com/vllm-project/semantic-router/blob/main/config/intelligent-routing/in-tree/keyword-nlp.yaml) — BM25 + N-gram + regex configuration
+- [keyword.yaml](https://github.com/vllm-project/semantic-router/blob/main/config/intelligent-routing/in-tree/keyword.yaml) — cấu hình chỉ regex
+- [keyword-nlp.yaml](https://github.com/vllm-project/semantic-router/blob/main/config/intelligent-routing/in-tree/keyword-nlp.yaml) — cấu hình BM25 + N-gram + regex

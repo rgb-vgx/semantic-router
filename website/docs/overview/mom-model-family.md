@@ -1,24 +1,24 @@
-# What is MoM Model Family?
+# MoM Model Family là gì?
 
-The **MoM (Mixture of Models) Model Family** is a curated collection of specialized, lightweight models designed for intelligent routing, content safety, and semantic understanding. These models power the core capabilities of Semantic Router, enabling fast, accurate, and privacy-preserving AI operations.
+**MoM (Mixture of Models) Model Family** là một tập hợp được curation của các mô hình chuyên biệt, nhẹ được thiết kế cho định tuyến thông minh, bảo mật nội dung và hiểu biết ngữ nghĩa. Các mô hình này hỗ trợ các khả năng cốt lõi của Semantic Router, cho phép hoạt động AI nhanh, chính xác và bảo vệ quyền riêng tư.
 
-## Overview
+## Tổng quan
 
-The MoM family consists of purpose-built models that handle specific tasks in the routing pipeline:
+Họ MoM bao gồm các mô hình được xây dựng với mục đích xử lý các tác vụ cụ thể trong đường ống định tuyến:
 
-- **Classification Models**: Domain detection, PII identification, jailbreak detection
-- **Embedding Models**: Semantic similarity, caching, retrieval
-- **Safety Models**: Hallucination detection, content moderation
-- **Feedback Models**: User intent understanding, conversation analysis
+- **Classification Models**: Phát hiện miền, xác định PII, phát hiện jailbreak
+- **Embedding Models**: Tương tự ngữ nghĩa, bộ nhớ đệm, truy xuất
+- **Safety Models**: Phát hiện ảo tưởng, kiểm duyệt nội dung
+- **Feedback Models**: Hiểu ý định người dùng, phân tích cuộc trò chuyện
 
-All MoM models are:
+Tất cả các mô hình MoM đều có:
 
-- **Lightweight**: 33M-600M parameters for fast inference
-- **Specialized**: Fine-tuned for specific routing tasks
-- **Efficient**: Many use LoRA adapters for minimal memory footprint
-- **Open Source**: Available on HuggingFace for transparency and customization
+- **Lightweight**: 33M-600M tham số để suy diễn nhanh
+- **Specialized**: Tinh chỉnh cho các tác vụ định tuyến cụ thể
+- **Efficient**: Nhiều mô hình sử dụng bộ điều hợp LoRA để mức lưu trữ tối thiểu
+- **Open Source**: Có sẵn trên HuggingFace để minh bạch và tùy chỉnh
 
-## Model Categories
+## Các danh mục mô hình
 
 ### 1. Classification Models
 
@@ -26,62 +26,62 @@ All MoM models are:
 
 - **Model ID**: `models/mom-domain-classifier`
 - **HuggingFace**: `LLM-Semantic-Router/lora_intent_classifier_bert-base-uncased_model`
-- **Purpose**: Classify user queries into 14 MMLU categories (math, science, history, etc.)
-- **Architecture**: BERT-base (110M) + LoRA adapters
-- **Use Case**: Route queries to domain-specific models or experts
+- **Purpose**: Phân loại truy vấn người dùng thành 14 danh mục MMLU (toán học, khoa học, lịch sử, v.v.)
+- **Architecture**: BERT-base (110M) + bộ điều hợp LoRA
+- **Use Case**: Định tuyến truy vấn tới các mô hình hoặc chuyên gia cụ thể theo miền
 
 #### PII Detector
 
 - **Model ID**: `models/mom-pii-classifier`
 - **HuggingFace**: `LLM-Semantic-Router/lora_pii_detector_bert-base-uncased_model`
-- **Purpose**: Detect 35 types of personally identifiable information
-- **Architecture**: BERT-base (110M) + LoRA adapters
-- **Use Case**: Privacy protection, compliance, data masking
+- **Purpose**: Phát hiện 35 loại thông tin nhận dạng cá nhân
+- **Architecture**: BERT-base (110M) + bộ điều hợp LoRA
+- **Use Case**: Bảo vệ quyền riêng tư, tuân thủ, che giấu các nhân
 
 #### Jailbreak Detector
 
 - **Model ID**: `models/mom-jailbreak-classifier`
 - **HuggingFace**: `LLM-Semantic-Router/lora_jailbreak_classifier_bert-base-uncased_model`
-- **Purpose**: Detect prompt injection and jailbreak attempts
-- **Architecture**: BERT-base (110M) + LoRA adapters
-- **Use Case**: Content safety, prompt security
+- **Purpose**: Phát hiện tiêm nhắc lệnh và các nỗ lực jailbreak
+- **Architecture**: BERT-base (110M) + bộ điều hợp LoRA
+- **Use Case**: Bảo mật nội dung, bảo mật nhắc lệnh
 
 #### Feedback Detector
 
 - **Model ID**: `models/mom-feedback-detector`
 - **HuggingFace**: `llm-semantic-router/feedback-detector`
-- **Purpose**: Classify user feedback into 4 types (satisfied, need clarification, wrong answer, want different)
+- **Purpose**: Phân loại phản hồi người dùng thành 4 loại (hài lòng, cần làm rõ, câu trả lời sai, muốn cái khác)
 - **Architecture**: ModernBERT-base (149M)
-- **Use Case**: Adaptive routing, conversation improvement
+- **Use Case**: Định tuyến thích ứng, cải thiện cuộc trò chuyện
 
 ### 2. Embedding Models
 
-#### Embedding Pro (High Quality)
+#### Embedding Pro (Chất lượng cao)
 
 - **Model ID**: `models/mom-embedding-pro`
 - **HuggingFace**: `Qwen/Qwen3-Embedding-0.6B`
-- **Purpose**: High-quality embeddings with 32K context support
-- **Architecture**: Qwen3 (600M parameters)
+- **Purpose**: Nhúng chất lượng cao với hỗ trợ bağlam 32K
+- **Architecture**: Qwen3 (600M tham số)
 - **Embedding Dimension**: 1024
-- **Use Case**: Long-context semantic search, high-accuracy caching
+- **Use Case**: Tìm kiếm ngữ nghĩa trong bảng ngữ cảnh dài, bộ nhớ đệm độ chính xác cao
 
-#### Embedding Flash (Balanced)
+#### Embedding Flash (Cân bằng)
 
 - **Model ID**: `models/mom-embedding-flash`
 - **HuggingFace**: `google/embeddinggemma-300m`
-- **Purpose**: Fast embeddings with Matryoshka support
-- **Architecture**: Gemma (300M parameters)
-- **Embedding Dimension**: 768 (supports 512/256/128 via Matryoshka)
-- **Use Case**: Balanced speed/quality, multilingual support
+- **Purpose**: Nhúng nhanh với hỗ trợ Matryoshka
+- **Architecture**: Gemma (300M tham số)
+- **Embedding Dimension**: 768 (hỗ trợ 512/256/128 qua Matryoshka)
+- **Use Case**: Cân bằng tốc độ/chất lượng, hỗ trợ đa ngôn ngữ
 
-#### Embedding Light (Fast)
+#### Embedding Light (Nhanh)
 
 - **Model ID**: `models/mom-embedding-light`
 - **HuggingFace**: `sentence-transformers/all-MiniLM-L12-v2`
-- **Purpose**: Lightweight semantic similarity
-- **Architecture**: MiniLM (33M parameters)
+- **Purpose**: Tương tự ngữ nghĩa nhẹ
+- **Architecture**: MiniLM (33M tham số)
 - **Embedding Dimension**: 384
-- **Use Case**: Fast semantic caching, low-latency retrieval
+- **Use Case**: Bộ nhớ đệm ngữ nghĩa nhanh, truy xuất độ trễ thấp
 
 ### 3. Hallucination Detection Models
 
@@ -89,81 +89,81 @@ All MoM models are:
 
 - **Model ID**: `models/mom-halugate-sentinel`
 - **HuggingFace**: `LLM-Semantic-Router/halugate-sentinel`
-- **Purpose**: First-stage hallucination screening
+- **Purpose**: Sàng lọc ảo tưởng giai đoạn đầu tiên
 - **Architecture**: BERT-base (110M)
-- **Use Case**: Fast hallucination detection, pre-filtering
+- **Use Case**: Phát hiện ảo tưởng nhanh, lọc trước
 
 #### Halugate Detector
 
 - **Model ID**: `models/mom-halugate-detector`
 - **HuggingFace**: `KRLabsOrg/lettucedect-base-modernbert-en-v1`
-- **Purpose**: Accurate hallucination verification
+- **Purpose**: Xác minh ảo tưởng chính xác
 - **Architecture**: ModernBERT-base (149M)
-- **Context Length**: 8192 tokens
-- **Use Case**: Factual accuracy verification, grounding check
+- **Context Length**: 8192 token
+- **Use Case**: Xác minh độ chính xác thực tế, kiểm tra nền tảng
 
 #### Halugate Explainer
 
 - **Model ID**: `models/mom-halugate-explainer`
 - **HuggingFace**: `tasksource/ModernBERT-base-nli`
-- **Purpose**: Explain hallucination reasoning via NLI
+- **Purpose**: Giải thích lý do ảo tưởng qua NLI
 - **Architecture**: ModernBERT-base (149M)
 - **Classes**: 3 (entailment/neutral/contradiction)
-- **Use Case**: Explainable AI, hallucination analysis
+- **Use Case**: AI có thể giải thích được, phân tích ảo tưởng
 
-## Model Selection Guide
+## Hướng dẫn lựa chọn mô hình
 
-### By Use Case
+### Theo Trường hợp sử dụng
 
-| Use Case | Recommended Model | Why |
+| Trường hợp sử dụng | Mô hình được đề xuất | Tại sao |
 |----------|------------------|-----|
-| Domain routing | mom-domain-classifier | 14 MMLU categories, LoRA efficient |
-| Privacy protection | mom-pii-classifier | 35 PII types, token-level detection |
-| Content safety | mom-jailbreak-classifier | Prompt injection detection |
-| Semantic caching | mom-embedding-light | Fast, 384-dim, low latency |
-| Long-context search | mom-embedding-pro | 32K context, 1024-dim |
-| Hallucination check | mom-halugate-detector | ModernBERT, 8K context |
-| User feedback | mom-feedback-detector | 4 feedback types, ModernBERT |
+| Định tuyến miền | mom-domain-classifier | 14 danh mục MMLU, hiệu quả LoRA |
+| Bảo vệ quyền riêng tư | mom-pii-classifier | 35 loại PII, phát hiện cấp token |
+| Bảo mật nội dung | mom-jailbreak-classifier | Phát hiện tiêm nhắc lệnh |
+| Bộ nhớ đệm ngữ nghĩa | mom-embedding-light | Nhanh, 384-chiều, độ trễ thấp |
+| Tìm kiếm bảng ngữ cảnh dài | mom-embedding-pro | Bảng ngữ cảnh 32K, 1024-chiều |
+| Kiểm tra ảo tưởng | mom-halugate-detector | ModernBERT, bảng ngữ cảnh 8K |
+| Phản hồi người dùng | mom-feedback-detector | 4 loại phản hồi, ModernBERT |
 
-### By Performance Requirements
+### Theo yêu cầu hiệu suất
 
-| Requirement | Model Tier | Examples |
+| Yêu cầu | Tầng mô hình | Ví dụ |
 |-------------|-----------|----------|
-| Ultra-fast (&lt;10ms) | Light | mom-embedding-light, mom-jailbreak-classifier |
-| Balanced (10-50ms) | Flash | mom-embedding-flash, mom-domain-classifier |
-| High-quality (50-200ms) | Pro | mom-embedding-pro, mom-halugate-detector |
+| Siêu nhanh (<10ms) | Light | mom-embedding-light, mom-jailbreak-classifier |
+| Cân bằng (10-50ms) | Flash | mom-embedding-flash, mom-domain-classifier |
+| Chất lượng cao (50-200ms) | Pro | mom-embedding-pro, mom-halugate-detector |
 
-## Configuration
+## Cấu hình
 
-### Using MoM Models in Router
+### Sử dụng mô hình MoM trong Bộ định tuyến
 
-MoM models are pre-configured in `router-defaults.yaml`:
+Các mô hình MoM được cấu hình sẵn trong `router-defaults.yaml`:
 
 ```yaml
-# Domain classification
+# Phân loại miền
 classifier:
   category_model:
     model_id: "models/mom-domain-classifier"
     threshold: 0.6
     use_cpu: true
 
-# PII detection
+# Phát hiện PII
 classifier:
   pii_model:
     model_id: "models/mom-pii-classifier"
     threshold: 0.9
     use_cpu: true
 
-# Jailbreak protection
+# Bảo vệ jailbreak
 prompt_guard:
   model_id: "models/mom-jailbreak-classifier"
   threshold: 0.7
   use_cpu: true
 ```
 
-### Custom Model Registry
+### Đăng ký mô hình tùy chỉnh
 
-Override the default registry in your `config.yaml`:
+Ghi đè sổ đăng ký mặc định trong `config.yaml` của bạn:
 
 ```yaml
 mom_registry:
@@ -172,29 +172,29 @@ mom_registry:
   "models/mom-embedding-pro": "your-org/custom-embeddings"
 ```
 
-## Model Architecture
+## Kiến trúc mô hình
 
-### LoRA-Based Models
+### Mô hình dựa trên LoRA
 
-Many MoM models use LoRA (Low-Rank Adaptation) for efficiency:
+Nhiều mô hình MoM sử dụng LoRA (Low-Rank Adaptation) để nâng cao hiệu quả:
 
-- **Base Model**: BERT-base-uncased (110M parameters)
-- **LoRA Adapters**: &lt;1M parameters per task
-- **Memory Footprint**: ~440MB base + ~4MB per adapter
-- **Inference Speed**: Same as base model (~10-20ms on CPU)
+- **Base Model**: BERT-base-uncased (110M tham số)
+- **LoRA Adapters**: <1M tham số cho mỗi tác vụ
+- **Memory Footprint**: ~440MB cơ sở + ~4MB cho mỗi bộ điều hợp
+- **Inference Speed**: Giống với mô hình cơ sở (~10-20ms trên CPU)
 
-### ModernBERT Models
+### Mô hình ModernBERT
 
-Newer models use ModernBERT for better performance:
+Các mô hình mới hơn sử dụng ModernBERT để hiệu suất tốt hơn:
 
-- **Architecture**: ModernBERT-base (149M parameters)
-- **Context Length**: 8192 tokens (vs 512 for BERT)
-- **Performance**: Better accuracy on long-context tasks
-- **Use Cases**: Hallucination detection, feedback classification
+- **Architecture**: ModernBERT-base (149M tham số)
+- **Context Length**: 8192 token (so với 512 cho BERT)
+- **Performance**: Độ chính xác tốt hơn trên các tác vụ bảng ngữ cảnh dài
+- **Use Cases**: Phát hiện ảo tưởng, phân loại phản hồi
 
-## Next Steps
+## Bước tiếp theo
 
-- **[Signal-Driven Decisions](./signal-driven-decisions.md)** - Learn how MoM models power routing decisions
-- **[Domain Routing](../tutorials/intelligent-route/domain-routing.md)** - Use mom-domain-classifier for routing
-- **[PII Detection](../tutorials/content-safety/pii-detection.md)** - Configure mom-pii-classifier
-- **[Semantic Cache](../tutorials/semantic-cache/in-memory-cache.md)** - Use MoM embedding models
+- **[Signal-Driven Decisions](./signal-driven-decisions.md)** - Tìm hiểu cách các mô hình MoM hỗ trợ quyết định định tuyến
+- **[Domain Routing](../tutorials/intelligent-route/domain-routing.md)** - Sử dụng mom-domain-classifier để định tuyến
+- **[PII Detection](../tutorials/content-safety/pii-detection.md)** - Cấu hình mom-pii-classifier
+- **[Semantic Cache](../tutorials/semantic-cache/in-memory-cache.md)** - Sử dụng các mô hình nhúng MoM

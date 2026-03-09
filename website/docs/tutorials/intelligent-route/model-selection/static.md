@@ -1,45 +1,45 @@
-# Static Selection
+# Lựa Chọn Tĩnh
 
-Static selection routes requests to a fixed model based on predefined rules. This is the simplest selection method, ideal for deterministic routing needs.
+Lựa chọn tĩnh định tuyến các yêu cầu đến một mô hình cố định dựa trên các quy tắc được xác định trước. Đây là phương pháp lựa chọn đơn giản nhất, lý tưởng cho các nhu cầu định tuyến xác định.
 
-## Algorithm Flow
+## Luồng Thuật Toán
 
 ```mermaid
 flowchart TD
-    A[User Query] --> B[Load Rules]
-    B --> C[Evaluate Rule 1]
-    C -->|Match| D[Select Model from Rule]
-    C -->|No Match| E[Evaluate Rule 2]
-    E -->|Match| D
-    E -->|No Match| F[...]
-    F -->|No Match| G[Use Default Model]
-    D --> H[Route to Model]
+    A[Truy Vấn Người Dùng] --> B[Tải Quy Tắc]
+    B --> C[Đánh Giá Quy Tắc 1]
+    C -->|Khớp| D[Chọn Mô Hình từ Quy Tắc]
+    C -->|Không Khớp| E[Đánh Giá Quy Tắc 2]
+    E -->|Khớp| D
+    E -->|Không Khớp| F[...]
+    F -->|Không Khớp| G[Sử Dụng Mô Hình Mặc Định]
+    D --> H[Định Tuyến Đến Mô Hình]
     G --> H
-    
+
     style C stroke:#000,stroke-width:2px,stroke-dasharray: 5 5
     style D stroke:#000,stroke-width:2px,stroke-dasharray: 5 5
 ```
 
-## Core Algorithm (Go)
+## Thuật Toán Cơ Bản (Go)
 
 ```go
-// Select using rule-based matching
+// Select sử dụng khớp dựa trên quy tắc
 func (s *StaticSelector) Select(ctx context.Context, selCtx *SelectionContext) (*SelectionResult, error) {
     for _, rule := range s.rules {
         if s.matchesRule(rule, selCtx) {
             return &SelectionResult{
                 SelectedModel: rule.Model,
                 Method:        MethodStatic,
-                Reason:        fmt.Sprintf("matched rule: %s", rule.Name),
+                Reason:        fmt.Sprintf("khớp quy tắc: %s", rule.Name),
             }, nil
         }
     }
-    
-    // No rule matched, use default
+
+    // Không có quy tắc khớp, sử dụng mặc định
     return &SelectionResult{
         SelectedModel: s.defaultModel,
         Method:        MethodStatic,
-        Reason:        "default model (no rules matched)",
+        Reason:        "mô hình mặc định (không có quy tắc khớp)",
     }, nil
 }
 
@@ -57,15 +57,15 @@ func (s *StaticSelector) matchesRule(rule Rule, selCtx *SelectionContext) bool {
 }
 ```
 
-## How It Works
+## Cách Hoạt Động
 
-Static selection uses explicit rules to match requests to models:
+Lựa chọn tĩnh sử dụng các quy tắc rõ ràng để khớp các yêu cầu với các mô hình:
 
-1. Evaluate request against configured rules (in order)
-2. First matching rule determines the model
-3. If no rules match, use the default model
+1. Đánh giá yêu cầu dựa trên các quy tắc được cấu hình
+2. Quy tắc khớp đầu tiên xác định mô hình
+3. Nếu không có quy tắc khớp, sử dụng mô hình mặc định
 
-## Configuration
+## Cấu Hình
 
 ```yaml
 decision:
@@ -94,9 +94,9 @@ models:
     backend: openai
 ```
 
-## Rule Matching
+## Khớp Quy Tắc
 
-### Category-based
+### Dựa Trên Danh Mục
 
 ```yaml
 rules:
@@ -105,7 +105,7 @@ rules:
     model: gpt-4
 ```
 
-### Keyword-based
+### Dựa Trên Từ Khóa
 
 ```yaml
 rules:
@@ -114,7 +114,7 @@ rules:
     model: gpt-4
 ```
 
-### Token-based
+### Dựa Trên Token
 
 ```yaml
 rules:
@@ -123,56 +123,56 @@ rules:
     model: gpt-4-32k
 ```
 
-### Combined Conditions
+### Điều Kiện Kết Hợp
 
 ```yaml
 rules:
   - match:
       category: coding
       keywords: ["debug", "fix"]
-    model: gpt-4  # Both conditions must match
+    model: gpt-4  # Cả hai điều kiện phải khớp
 ```
 
-## Rule Priority
+## Ưu Tiên Quy Tắc
 
-Rules are evaluated in order. Place more specific rules first:
+Các quy tắc được đánh giá theo thứ tự. Đặt các quy tắc cụ thể trước:
 
 ```yaml
 rules:
-  # Specific rule first
+  # Quy tắc cụ thể trước
   - match:
       category: coding
       keywords: ["security"]
     model: gpt-4-security-tuned
-    
-  # General rule second
+
+  # Quy tắc chung thứ hai
   - match:
       category: coding
     model: gpt-4
-    
-  # Catch-all last (or use default_model)
+
+  # Bắt tất cả cuối cùng (hoặc sử dụng default_model)
   - match: {}
     model: gpt-3.5-turbo
 ```
 
-## When to Use Static Selection
+## Khi Nào Sử Dụng Lựa Chọn Tĩnh
 
-**Good for:**
+**Tốt cho:**
 
-- Deterministic, predictable routing
-- Compliance requirements (certain data must use specific models)
-- Simple use cases with clear categorization
-- Development and testing
+- Định tuyến xác định, có thể dự đoán được
+- Yêu cầu tuân thủ (dữ liệu nhất định phải sử dụng các mô hình cụ thể)
+- Các trường hợp sử dụng đơn giản với phân loại rõ ràng
+- Phát triển và kiểm thử
 
-**Consider alternatives when:**
+**Xem xét các giải pháp thay thế khi:**
 
-- Query types are diverse and hard to categorize
-- You want to optimize cost vs. quality dynamically
-- You need adaptive behavior based on feedback
+- Các loại truy vấn đa dạng và khó phân loại
+- Bạn muốn tối ưu hóa chi phí vs chất lượng động
+- Bạn cần hành vi thích ứng dựa trên phản hồi
 
-## Best Practices
+## Thực Hành Tốt Nhất
 
-1. **Order matters**: Place specific rules before general ones
-2. **Always set default**: Ensure `default_model` is configured for unmatched requests
-3. **Test rules**: Verify rule matching with representative queries
-4. **Keep rules simple**: Complex rule sets become hard to maintain
+1. **Thứ tự quan trọng**: Đặt các quy tắc cụ thể trước những công thức chung
+2. **Luôn đặt mặc định**: Đảm bảo `default_model` được cấu hình cho các yêu cầu không khớp
+3. **Kiểm thử quy tắc**: Xác minh khớp quy tắc với các truy vấn đại diện
+4. **Giữ quy tắc đơn giản**: Các tập quy tắc phức tạp trở nên khó duy trì

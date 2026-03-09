@@ -1,48 +1,48 @@
-# Jailbreak Protection
+# Bảo vệ Jailbreak
 
-Semantic Router includes advanced jailbreak detection to identify and block adversarial prompts that attempt to bypass AI safety measures. Two complementary detection methods are available:
+Semantic Router bao gồm các tính năng phát hiện jailbreak tiên tiến để xác định và chặn các lời nhắc đối nghịch cố gắng vượt qua các biện pháp an toàn của AI. Hai phương pháp phát hiện bổ sung nhau có sẵn:
 
-- **BERT Classifier** — fast, high-precision detection of single-turn jailbreak attempts using a fine-tuned BERT model
-- **Contrastive Embedding** — embedding-based detection designed to catch multi-turn escalation ("boiling frog") attacks where individual messages appear benign but the conversation gradually steers the model toward unsafe behavior
+- **Bộ phân loại BERT** — phát hiện nhanh và chính xác cao của các loại jailbreak một lượt bằng cách sử dụng mô hình BERT được tinh chỉnh
+- **Embedding Tương phản** — phát hiện dựa trên embedding được thiết kế để bắt các cuộc tấn công leo thang nhiều lượt ("boiling frog") nơi các tin nhắn riêng lẻ dường như vô hại nhưng cuộc trò chuyện dần dần lái mô hình về hành vi không an toàn
 
-Both methods live inside the same `signals.jailbreak` signal type and can be combined in decision rules using OR/AND logic.
+Cả hai phương pháp đều nằm trong cùng một loại tín hiệu `signals.jailbreak` và có thể được kết hợp trong các quy tắc quyết định bằng cách sử dụng logic OR/AND.
 
-## Overview
+## Tổng quan
 
-The jailbreak protection system:
+Hệ thống bảo vệ jailbreak:
 
-- **Detects** adversarial prompts and jailbreak attempts
-- **Blocks** malicious requests before they reach LLMs
-- **Identifies** prompt injection and manipulation techniques
-- **Detects multi-turn escalation** via contrastive embedding across full conversation history
-- **Provides** detailed reasoning for security decisions
-- **Integrates** with signal-driven decisions for enhanced security
+- **Phát hiện** các lời nhắc đối nghịch và các nỗ lực jailbreak
+- **Chặn** các yêu cầu độc hại trước khi chúng đến được các LLM
+- **Xác định** các kỹ thuật tiêm prompt và thao túng
+- **Phát hiện leo thang nhiều lượt** thông qua embedding tương phản trên toàn bộ lịch sử cuộc trò chuyện
+- **Cung cấp** lập luận chi tiết cho các quyết định bảo mật
+- **Tích hợp** với các quyết định dựa trên tín hiệu để tăng cường bảo mật
 
-## Jailbreak Detection Types
+## Các loại Phát hiện Jailbreak
 
-The system can identify various attack patterns:
+Hệ thống có thể xác định các mẫu tấn công khác nhau:
 
-### Direct Jailbreaks
+### Jailbreak Trực tiếp
 
-- Role-playing attacks ("You are now DAN...")
-- Instruction overrides ("Ignore all previous instructions...")
-- Safety bypass attempts ("Pretend you have no safety guidelines...")
+- Các cuộc tấn công đóng vai ("You are now DAN...")
+- Ghi đè hướng dẫn ("Ignore all previous instructions...")
+- Các nỗ lực vượt qua an toàn ("Pretend you have no safety guidelines...")
 
-### Prompt Injection
+### Tiêm Prompt
 
-- System prompt extraction attempts
-- Context manipulation
-- Instruction hijacking
+- Các nỗ lực trích xuất prompt hệ thống
+- Thao túng bối cảnh
+- Chiếm đoạt hướng dẫn
 
-### Social Engineering
+### Kỹ thuật Xã hội
 
-- Authority impersonation
-- Urgency manipulation
-- False scenario creation
+- Mạo danh thẩm quyền
+- Thao túng khẩn cấp
+- Tạo kịch bản giả mạo
 
-## Configuration
+## Cấu hình
 
-Jailbreak detection is now a **first-class signal** in the signal layer. You define named `jailbreak` rules under `signals.jailbreak`, then reference them in `decisions` using `type: "jailbreak"`.
+Phát hiện jailbreak hiện là một **tín hiệu hạng nhất** trong lớp tín hiệu. Bạn xác định các quy tắc `jailbreak` được đặt tên dưới `signals.jailbreak`, sau đó tham chiếu chúng trong `decisions` bằng cách sử dụng `type: "jailbreak"`.
 
 ### Basic Jailbreak Protection
 

@@ -1,78 +1,78 @@
-# In-Memory Semantic Cache
+# Bộ Nhớ Đệm Ngữ Nghĩa Trong Bộ Nhớ
 
-The in-memory cache backend stores semantic embeddings and cached responses directly in memory for fast local caching.
+Bộ nhớ đệm backend trong bộ nhớ lưu trữ các nhúng ngữ nghĩa và các phản hồi được lưu trong bộ nhớ trực tiếp để bộ nhớ đệm cục bộ nhanh.
 
-## Overview
+## Tổng Quan
 
-The in-memory cache stores all cache data in the application's memory, providing low-latency access without external dependencies.
+Bộ nhớ đệm trong bộ nhớ lưu trữ tất cả dữ liệu bộ nhớ đệm trong bộ nhớ của ứng dụng, cung cấp quyền truy cập độ trễ thấp mà không có sự phụ thuộc bên ngoài.
 
-## Architecture
+## Kiến Trúc
 
 ```mermaid
 graph TB
-    A[Client Request] --> B[Semantic Cache]
-    B --> C[Generate Query Embedding]
-    C --> D[In-Memory Cache Lookup]
-    D --> E{Similar Query Found?}
+    A[Yêu Cầu Khách Hàng] --> B[Bộ Nhớ Đệm Ngữ Nghĩa]
+    B --> C[Tạo Nhúng Truy Vấn]
+    C --> D[Tra Cứu Bộ Nhớ Đệm Trong Bộ Nhớ]
+    D --> E{Tìm Thấy Truy Vấn Tương Tự?}
 
-    E -->|Hit| F[Return Cached Response]
-    E -->|Miss| G[Forward to LLM]
+    E -->|Chạm| F[Trả Lời Phản Hồi Cached]
+    E -->|Bỏ Lỡ| G[Chuyển Tiếp đến LLM]
 
-    G --> H[LLM Processing]
-    H --> I[Store Response in Memory]
-    H --> J[Return Response]
+    G --> H[Xử Lý LLM]
+    H --> I[Lưu Trữ Phản Hồi Trong Bộ Nhớ]
+    H --> J[Trả Lời Phản Hồi]
 
-    I --> K[Update Memory Cache]
-    F --> L[Update Hit Metrics]
+    I --> K[Cập Nhật Bộ Nhớ Đệm]
+    F --> L[Cập Nhật Số Liệu Nhấn]
 
     style F fill:#90EE90
     style I fill:#FFB6C1
     style K fill:#87CEEB
 ```
 
-## How It Works
+## Cách Hoạt Động
 
-### Write Path
+### Đường Dẫn Viết
 
-When caching a response:
+Khi lưu trữ phản hồi:
 
-1. Generate embedding for the query using the configured embedding model
-2. Store the embedding and response in memory
-3. Apply TTL if configured
-4. Evict oldest/least-used entries if max_entries limit is reached
+1. Tạo nhúng cho truy vấn bằng mô hình nhúng được cấu hình
+2. Lưu trữ nhúng và phản hồi trong bộ nhớ
+3. Áp dụng TTL nếu được cấu hình
+4. Loại bỏ các mục cũ nhất/ít sử dụng nhất nếu đạt giới hạn max_entries
 
-### Read Path
+### Đường Dẫn Đọc
 
-When searching for a cached response:
+Khi tìm kiếm phản hồi được lưu trong bộ nhớ đệm:
 
-1. Generate embedding for the incoming query
-2. Search in-memory cache for similar embeddings
-3. If similarity exceeds threshold, return cached response (cache hit)
-4. Otherwise, forward to LLM and cache the new response (cache miss)
+1. Tạo nhúng cho truy vấn đến
+2. Tìm kiếm trong bộ nhớ đệm để tìm các nhúng tương tự
+3. Nếu tương đồng vượt quá ngưỡng, trả lại phản hồi được lưu (chạm bộ nhớ đệm)
+4. Ngoài ra, chuyển tiếp đến LLM và lưu trữ phản hồi mới (bỏ lỡ bộ nhớ đệm)
 
-### Search Methods
+### Phương Pháp Tìm Kiếm
 
-The cache supports two search methods:
+Bộ nhớ đệm hỗ trợ hai phương pháp tìm kiếm:
 
-- **Linear Search**: Compares query embedding against all cached embeddings
-- **HNSW Index**: Uses hierarchical graph structure for faster approximate nearest neighbor search
+- **Tìm Kiếm Tuyến Tính**: So sánh nhúng truy vấn dựa trên tất cả các nhúng được lưu trong bộ nhớ đệm
+- **Chỉ Mục HNSW**: Sử dụng cấu trúc biểu đồ phân cấp để tìm kiếm hàng xóm gần đúng nhanh hơn
 
-## Configuration
+## Cấu Hình
 
-### Basic Configuration
+### Cấu Hình Cơ Bản
 
 ```yaml
 # config/config.yaml
 semantic_cache:
   enabled: true
   backend_type: "memory"
-  similarity_threshold: 0.8       # Global default threshold
+  similarity_threshold: 0.8       # Ngưỡng mặc định toàn cầu
   max_entries: 1000
   ttl_seconds: 3600
   eviction_policy: "fifo"
 ```
 
-### Configuration with HNSW
+### Cấu Hình Với HNSW
 
 ```yaml
 semantic_cache:
@@ -82,214 +82,20 @@ semantic_cache:
   max_entries: 1000
   ttl_seconds: 3600
   eviction_policy: "fifo"
-  # HNSW index for faster search
+  # Chỉ mục HNSW để tìm kiếm nhanh hơn
   use_hnsw: true
   hnsw_m: 16
   hnsw_ef_construction: 200
 ```
 
-### Category-Level Configuration (New)
+## Cài Đặt và Kiểm Thử
 
-Configure cache settings per category for fine-grained control:
+### Bật Bộ Nhớ Đệm Trong Bộ Nhớ
 
-```yaml
-semantic_cache:
-  enabled: true
-  backend_type: "memory"
-  similarity_threshold: 0.8       # Global default
-  max_entries: 1000
-  ttl_seconds: 3600
-  eviction_policy: "fifo"
-
-categories:
-  - name: health
-    system_prompt: "You are a health expert..."
-    semantic_cache_enabled: true
-    semantic_cache_similarity_threshold: 0.95  # Very strict for medical accuracy
-    model_scores:
-      - model: your-model
-        score: 0.5
-        use_reasoning: false
-
-  - name: general_chat
-    system_prompt: "You are a helpful assistant..."
-    semantic_cache_similarity_threshold: 0.75  # Relaxed for better hit rate
-    model_scores:
-      - model: your-model
-        score: 0.7
-        use_reasoning: false
-
-  - name: troubleshooting
-    # No cache settings - uses global default (0.8)
-    model_scores:
-      - model: your-model
-        score: 0.7
-        use_reasoning: false
-```
-
-### Configuration Options
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `enabled` | boolean | `false` | Enable/disable semantic caching globally |
-| `backend_type` | string | `"memory"` | Cache backend type (must be "memory") |
-| `similarity_threshold` | float | `0.8` | Global minimum similarity for cache hits (0.0-1.0) |
-| `max_entries` | integer | `1000` | Maximum number of cached entries |
-| `ttl_seconds` | integer | `3600` | Time-to-live for cache entries (seconds, 0 = no expiration) |
-| `eviction_policy` | string | `"fifo"` | Eviction policy: `"fifo"`, `"lru"`, `"lfu"` |
-| `use_hnsw` | boolean | `false` | Enable HNSW index for similarity search |
-| `hnsw_m` | integer | `16` | HNSW M parameter (bi-directional links per node) |
-| `hnsw_ef_construction` | integer | `200` | HNSW efConstruction parameter (build quality) |
-
-### HNSW Parameters
-
-The in-memory cache supports HNSW (Hierarchical Navigable Small World) indexing for significantly faster similarity search, especially beneficial with large cache sizes.
-
-#### When to Use HNSW
-
-- **Large cache sizes** (>100 entries): HNSW provides logarithmic search time vs linear
-- **High query throughput**: Reduces CPU usage for similarity search
-- **Production deployments**: Better performance under load
-
-#### HNSW Configuration
-
-```yaml
-semantic_cache:
-  enabled: true
-  backend_type: "memory"
-  similarity_threshold: 0.8
-  max_entries: 10000           # Large cache benefits from HNSW
-  ttl_seconds: 3600
-  eviction_policy: "lru"
-  use_hnsw: true               # Enable HNSW index
-  hnsw_m: 16                   # Default: 16 (higher = better recall, more memory)
-  hnsw_ef_construction: 200    # Default: 200 (higher = better quality, slower build)
-```
-
-#### HNSW Parameters
-
-- **`hnsw_m`**: Number of bi-directional links created for each node in the graph
-  - Lower values (8-12): Faster build, less memory, lower recall
-  - Default (16): Balanced performance
-  - Higher values (32-64): Better recall, more memory, slower build
-
-- **`hnsw_ef_construction`**: Size of dynamic candidate list during index construction
-  - Lower values (100-150): Faster index building
-  - Default (200): Good balance
-  - Higher values (400-800): Better quality, slower build
-
-#### Performance Comparison
-
-| Cache Size | Linear Search | HNSW Search | Speedup |
-|-----------|---------------|-------------|---------|
-| 100 entries | ~0.5ms | ~0.4ms | 1.25x |
-| 1,000 entries | ~5ms | ~0.8ms | 6.25x |
-| 10,000 entries | ~50ms | ~1.2ms | 41.7x |
-| 100,000 entries | ~500ms | ~1.5ms | 333x |
-
-*Benchmarks on typical hardware with 384-dimensional embeddings*
-
-### Category-Level Configuration Options
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `semantic_cache_enabled` | boolean | (inherits global) | Enable/disable caching for this category |
-| `semantic_cache_similarity_threshold` | float | (inherits global) | Category-specific similarity threshold (0.0-1.0) |
-
-Category-level settings override global settings. If not specified, the category uses the global cache configuration.
-
-### Decision-Level Configuration (Plugin-Based)
-
-Configure semantic cache at the decision level using plugins for fine-grained control:
-
-```yaml
-signals:
-  domains:
-    - name: "math"
-      description: "Mathematical queries"
-      mmlu_categories: ["math"]
-
-decisions:
-  - name: math_route
-    description: "Route math queries with strict caching"
-    priority: 100
-    rules:
-      operator: "AND"
-      conditions:
-        - type: "domain"
-          name: "math"
-    modelRefs:
-      - model: "openai/gpt-oss-120b"
-        use_reasoning: true
-    plugins:
-      - type: "semantic-cache"
-        configuration:
-          enabled: true
-          similarity_threshold: 0.95  # Very strict for math accuracy
-
-  - name: general_route
-    description: "General queries with relaxed caching"
-    priority: 50
-    rules:
-      operator: "AND"
-      conditions:
-        - type: "domain"
-          name: "other"
-    modelRefs:
-      - model: "openai/gpt-oss-120b"
-        use_reasoning: false
-    plugins:
-      - type: "semantic-cache"
-        configuration:
-          enabled: true
-          similarity_threshold: 0.75  # Relaxed for better hit rate
-```
-
-**Plugin Configuration Options**:
-
-- **`enabled`**: Enable/disable caching for this decision (boolean)
-- **`similarity_threshold`**: Decision-specific similarity threshold (0.0-1.0)
-
-Decision-level plugin settings override both global and category-level settings.
-
-### Environment Examples
-
-#### Development Environment
-
-```yaml
-semantic_cache:
-  enabled: true
-  backend_type: "memory"
-  similarity_threshold: 0.9     # Strict matching for testing
-  max_entries: 500             # Small cache for development
-  ttl_seconds: 1800            # 30 minutes
-  eviction_policy: "fifo"
-  use_hnsw: false              # Optional for small dev cache
-```
-
-#### Production Environment with HNSW
-
-```yaml
-semantic_cache:
-  enabled: true
-  backend_type: "memory"
-  similarity_threshold: 0.85
-  max_entries: 50000           # Large production cache
-  ttl_seconds: 7200            # 2 hours
-  eviction_policy: "lru"
-  use_hnsw: true               # Enable for production
-  hnsw_m: 16
-  hnsw_ef_construction: 200
-```
-
-## Setup and Testing
-
-### Enable In-Memory Cache
-
-Update your configuration file:
+Cập nhật tệp cấu hình của bạn:
 
 ```bash
-# Edit config/config.yaml
+# Chỉnh sửa config/config.yaml
 cat >> config/config.yaml << EOF
 semantic_cache:
   enabled: true
@@ -300,72 +106,72 @@ semantic_cache:
 EOF
 ```
 
-### Start the Router
+### Bắt Đầu Router
 
 ```bash
-# Start the semantic router
+# Bắt đầu bộ định tuyến ngữ nghĩa
 make run-router
 
-# Or run directly
+# Hoặc chạy trực tiếp
 ./bin/router --config config/config.yaml
 ```
 
-### Test Cache Functionality
+### Kiểm Thử Chức Năng Bộ Nhớ Đệm
 
-Send requests to verify cache behavior:
+Gửi các yêu cầu để xác minh hành vi bộ nhớ đệm:
 
 ```bash
-# First request (cache miss)
+# Yêu cầu đầu tiên (bỏ lỡ bộ nhớ đệm)
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "MoM",
-    "messages": [{"role": "user", "content": "What is machine learning?"}]
+    "messages": [{"role": "user", "content": "Máy học là gì?"}]
   }'
 
-# Second identical request (cache hit)
+# Yêu cầu giống hệt (nhấn bộ nhớ đệm)
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "MoM",
-    "messages": [{"role": "user", "content": "What is machine learning?"}]
+    "messages": [{"role": "user", "content": "Máy học là gì?"}]
   }'
 
-# Similar request (semantic cache hit)
+# Yêu cầu tương tự (nhấn bộ nhớ đệm ngữ nghĩa)
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "MoM",
-    "messages": [{"role": "user", "content": "Explain machine learning concepts"}]
+    "messages": [{"role": "user", "content": "Giải thích các khái niệm máy học"}]
   }'
 ```
 
-## Characteristics
+## Đặc Điểm
 
-### Storage
+### Lưu Trữ
 
-- Data is stored in application memory
-- Cache is cleared when the application restarts
-- Limited by available system memory
+- Dữ liệu được lưu trữ trong bộ nhớ ứng dụng
+- Bộ nhớ đệm được xóa khi ứng dụng khởi động lại
+- Bị giới hạn bởi bộ nhớ hệ thống khả dụng
 
-### Access Pattern
+### Mô Hình Truy Cập
 
-- Direct memory access without network overhead
-- No external dependencies required
+- Truy cập bộ nhớ trực tiếp mà không có chi phí mạng
+- Không cần phụ thuộc bên ngoài
 
-### Eviction Policies
+### Chính Sách Loại Bỏ
 
-- **FIFO**: First In, First Out - removes oldest entries
-- **LRU**: Least Recently Used - removes least recently accessed entries
-- **LFU**: Least Frequently Used - removes least frequently accessed entries
+- **FIFO**: First In, First Out - loại bỏ các mục cũ nhất
+- **LRU**: Least Recently Used - loại bỏ các mục được truy cập gần đây nhất
+- **LFU**: Least Frequently Used - loại bỏ các mục được truy cập ít nhất
 
-### TTL Management
+### Quản Lý TTL
 
-- Entries can have a time-to-live (TTL)
-- Expired entries are removed during cleanup operations
+- Các mục có thể có thời gian sống (TTL)
+- Các mục hết hạn được loại bỏ trong quá trình làm sạch
 
-## Next Steps
+## Các Bước Tiếp Theo
 
-- **[Hybrid Cache](./hybrid-cache.md)** - Learn about HNSW + Milvus hybrid caching
-- **[Milvus Cache](./milvus-cache.md)** - Learn about persistent vector database caching
-- **[Observability](../observability/metrics.md)** - Monitor cache performance
+- **[Bộ Nhớ Đệm Hybrid](./hybrid-cache.md)** - Tìm hiểu về bộ nhớ đệm hybrid HNSW + Milvus
+- **[Bộ Nhớ Đệm Milvus](./milvus-cache.md)** - Tìm hiểu về bộ nhớ đệm cơ sở dữ liệu vectơ bền bỉ
+- **[Khả Năng Quan Sát](../observability/metrics.md)** - Theo dõi hiệu suất bộ nhớ đệm

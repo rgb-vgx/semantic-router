@@ -1,66 +1,66 @@
-# Semantic Router Dashboard
+# Bảng Điều Khiển Bộ Định Tuyến Ngữ Nghĩa
 
-The Semantic Router Dashboard is a unified operator UI that brings together Configuration Management, an Interactive Playground, and Real-time Monitoring & Observability. It provides a single entry point across local development, Docker Compose, and Kubernetes deployments.
+Bảng Điều Khiển Bộ Định Tuyến Ngữ Nghĩa là giao diện toán tử hợp nhất mang lại Quản Lý Cấu Hình, Sân Chơi Tương Tác và Giám Sát & Quan Sát Theo Thời Gian Thực. Nó cung cấp một điểm nhập duy nhất trên các triển khai phát triển cục bộ, Docker Compose và Kubernetes.
 
-- One place to view and edit configuration (with guardrails)
-- One tab to test prompts via a built-in chat playground
-- One tab to view metrics/dashboards (Grafana/Prometheus)
-- Single backend proxy that normalizes auth, CORS, and CSP across services
+- Một nơi để xem và chỉnh sửa cấu hình (với bảo vệ)
+- Một tab để kiểm tra lời nhắc thông qua sân chơi trò chuyện tích hợp
+- Một tab để xem số liệu/bảng điều khiển (Grafana/Prometheus)
+- Proxy phụ trợ duy nhất chuẩn hóa xác thực, CORS và CSP trên các dịch vụ
 
-## What’s inside
+## Trong Cái Gì
 
-### Frontend (React + TypeScript + Vite)
+### Giao Diện Trước (React + TypeScript + Vite)
 
-A modern SPA with:
+Ứng dụng một trang hiện đại với:
 
 - React 18 + TypeScript + Vite
-- React Router for client-side routing
-- CSS Modules, dark/light theme with persistence
-- Collapsible sidebar to jump across sections
-- Topology visualization powered by React Flow
+- React Router cho định tuyến phía máy khách
+- CSS Modules, chủ đề tối/sáng với tính bền vững
+- Thanh bên có thể thu gọn để nhảy qua các phần
+- Trực quan hóa tôpô được cấp bởi React Flow
 
-Pages:
+Các trang:
 
-- Landing: Intro and quick links
+- Trang đích: Giới thiệu và liên kết nhanh
 
-![Dashboard Landing](/img/dashboard/landing.png)
+![Trang đích Bảng điều khiển](/img/dashboard/landing.png)
 
-- Playground: Built-in chat playground for quick testing
+- Sân chơi: Sân chơi trò chuyện tích hợp để kiểm tra nhanh
 
-- Config: Real-time configuration viewer/editor with structured panels and raw view
+- Cấu hình: Trình xem/trình chỉnh sửa cấu hình theo thời gian thực với bảng điều khiển có cấu trúc và chế độ xem thô
 
-![Configuration Page](/img/dashboard/config.png)
+![Trang Cấu Hình](/img/dashboard/config.png)
 
-- Topology: Visual flow from user request to model selection
+- Tôpô: Luồng trực quan từ yêu cầu người dùng đến lựa chọn mô hình
 
-![Topology View](/img/dashboard/topology.png)
+![Chế độ xem Tôpô](/img/dashboard/topology.png)
 
-- Monitoring: Embedded Grafana dashboard
+- Giám sát: Bảng điều khiển Grafana nhúng
 
-![Grafana Embedded](/img/dashboard/grafana.png)
+![Grafana Nhúng](/img/dashboard/grafana.png)
 
-### Backend (Go HTTP Server)
+### Phụ Trợ (Máy Chủ HTTP Go)
 
-- Serves the frontend build (SPA routing)
-- Reverse proxies upstream services with header normalization for iframe embedding
-- Exposes a small set of dashboard APIs for config and tools database
+- Phục vụ bản dựng giao diện trước (định tuyến SPA)
+- Các máy chủ Proxy ngược với chuẩn hóa tiêu đề cho nhúng iframe
+- Tiếp xúc một bộ API bảng điều khiển nhỏ cho cấu hình và cơ sở dữ liệu công cụ
 
-Key routes:
+Các tuyến đường chính:
 
-- Health: `GET /healthz`
-- Config (read): `GET /api/router/config/all` (reads YAML, returns JSON)
-- Config (write): `POST /api/router/config/update` (writes YAML back to file)
-- Tools DB: `GET /api/tools-db` (serves tools_db.json next to the config)
-- Router API: `GET/POST /api/router/*` (Authorization header forwarded)
-- Grafana (embed): `GET /embedded/grafana/*`
-- Prometheus (embed): `GET /embedded/prometheus/*`
-- Router metrics passthrough: `GET /metrics/router` → redirects to router metrics
+- Sức khỏe: `GET /healthz`
+- Cấu hình (đọc): `GET /api/router/config/all` (đọc YAML, trả lại JSON)
+- Cấu hình (viết): `POST /api/router/config/update` (viết YAML trở lại tệp)
+- Cơ sở dữ liệu Công cụ: `GET /api/tools-db` (phục vụ tools_db.json bên cạnh cấu hình)
+- API Định Tuyến: `GET/POST /api/router/*` (Tiêu đề Ủy quyền được chuyển tiếp)
+- Grafana (nhúng): `GET /embedded/grafana/*`
+- Prometheus (nhúng): `GET /embedded/prometheus/*`
+- Số liệu định tuyến Passthrough: `GET /metrics/router` → chuyển hướng đến số liệu định tuyến
 
-The proxy strips/overrides `X-Frame-Options` and adjusts `Content-Security-Policy` to allow `frame-ancestors 'self'`, enabling safe embedding under the dashboard origin.
+Proxy loại bỏ/ghi đè `X-Frame-Options` và điều chỉnh `Content-Security-Policy` để cho phép `frame-ancestors 'self'`, cho phép nhúng an toàn dưới nguồn gốc bảng điều khiển.
 
-## Environment variables
+## Các Biến Môi Trường
 
-Supply upstream targets and runtime settings via env vars (defaults in parentheses):
+Cung cấp các mục tiêu hạ lưu và cài đặt thời gian chạy thông qua các biến env (mặc định trong ngoặc):
 
 - `DASHBOARD_PORT` (8700)
 - `TARGET_GRAFANA_URL`
@@ -70,27 +70,27 @@ Supply upstream targets and runtime settings via env vars (defaults in parenthes
 - `ROUTER_CONFIG_PATH` (../../config/config.yaml)
 - `DASHBOARD_STATIC_DIR` (../frontend)
 
-Note: The config update API writes to `ROUTER_CONFIG_PATH`. In containers/Kubernetes, this path must be writable (not a read-only ConfigMap). Mount a writable volume if you need runtime edits to persist.
+Lưu ý: API cập nhật cấu hình ghi vào `ROUTER_CONFIG_PATH`. Trong các vùng chứa/Kubernetes, đường dẫn này phải có thể ghi được (không phải ConfigMap chỉ đọc). Gắn một tập lưu trữ có thể ghi nếu bạn cần các chỉnh sửa thời gian chạy để duy trì.
 
-## Quick start
+## Khởi Động Nhanh
 
-### Docker Compose (recommended)
+### Docker Compose (Được Khuyến Khích)
 
-The dashboard is integrated into the main Compose file.
+Bảng điều khiển được tích hợp vào tệp Compose chính.
 
 ```bash
-# From the repository root
+# Từ gốc kho lưu trữ
 make docker-compose-up
 ```
 
-Then open in browser:
+Sau đó mở trong trình duyệt:
 
-- Dashboard: http://localhost:8700
+- Bảng điều khiển: http://localhost:8700
 - Grafana: http://localhost:3000
 - Prometheus: http://localhost:9090
 
-## Related docs
+## Tài Liệu Liên Quan
 
-- [Installation Configuration](../../installation/configuration.md)
-- [Observability Metrics](./metrics.md)
-- [Distributed Tracing](./distributed-tracing.md)
+- [Cấu Hình Cài Đặt](../../installation/configuration.md)
+- [Số Liệu Quan Sát được](./metrics.md)
+- [Theo Dõi Phân Tán](./distributed-tracing.md)

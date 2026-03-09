@@ -1,67 +1,68 @@
-# Hybrid Cache: HNSW + Milvus
+# Bộ Nhớ Đệm Hybrid: HNSW + Milvus
 
-The Hybrid Cache combines an in-memory HNSW index for fast search with a Milvus vector database for scalable, persistent storage.
+Bộ nhớ đệm Hybrid kết hợp chỉ mục HNSW trong bộ nhớ để tìm kiếm nhanh với cơ sở dữ liệu vectơ Milvus để lưu trữ có thể mở rộng.
 
-## Overview
+## Tổng Quan
 
-The hybrid architecture provides:
+Kiến trúc hybrid cung cấp:
 
-- **Fast search** via in-memory HNSW index
-- **Scalable storage** via Milvus vector database
-- **Persistence** with Milvus as the source of truth
-- **Hot data caching** with local document cache
+- **Tìm kiếm nhanh** qua chỉ mục HNSW trong bộ nhớ
+- **Lưu trữ có thể mở rộng** thông qua cơ sở dữ liệu vectơ Milvus
+- **Tính bền bỉ** với Milvus như nguồn sự thật
+- **Lưu trữ dữ liệu nóng** với bộ nhớ đệm tài liệu cục bộ
 
-## Architecture
+## Kiến Trúc
 
 ```
 ┌──────────────────────────────────────────────────┐
-│                  Hybrid Cache                     │
+│                  Bộ Nhớ Đệm Hybrid               │
 ├──────────────────────────────────────────────────┤
 │  ┌─────────────────┐      ┌──────────────────┐  │
-│  │  In-Memory      │      │   Local Cache    │  │
-│  │  HNSW Index     │◄─────┤   (Hot Data)     │  │
-│  └────────┬────────┘      └──────────────────┘  │
+│  │  Trong Bộ Nhớ   │      │   Bộ Nhớ Đệm     │  │
+│  │  Chỉ Mục HNSW  │◄─────┤   Tục Bản (Dữ    │  │
+│  └────────┬────────┘      │   Liệu Nóng)     │  │
+│           │                └──────────────────┘  │
 │           │                                       │
-│           │ ID Mapping                           │
+│           │ Ánh Xạ ID                           │
 │           ▼                                       │
 │  ┌──────────────────────────────────────────┐   │
-│  │         Milvus Vector Database           │   │
+│  │         Cơ Sở Dữ Liệu Vectơ Milvus      │   │
 │  └──────────────────────────────────────────┘   │
 └──────────────────────────────────────────────────┘
 ```
 
-## How It Works
+## Cách Hoạt Động
 
-### Write Path (AddEntry)
+### Đường Dẫn Viết (AddEntry)
 
-When adding a cache entry:
+Khi thêm mục bộ nhớ đệm:
 
-1. Generate embedding using the configured embedding model
-2. Write entry to Milvus for persistence
-3. Add entry to in-memory HNSW index (if space is available)
-4. Add document to local cache
+1. Tạo nhúng bằng mô hình nhúng được cấu hình
+2. Ghi mục vào Milvus để duy trì
+3. Thêm mục vào chỉ mục HNSW trong bộ nhớ (nếu có chỗ trống)
+4. Thêm tài liệu vào bộ nhớ đệm cục bộ
 
-### Read Path (FindSimilar)
+### Đường Dẫn Đọc (FindSimilar)
 
-When searching for a similar query:
+Khi tìm kiếm một truy vấn tương tự:
 
-1. Generate query embedding
-2. Search HNSW index for nearest neighbors
-3. Check local cache for matching documents
-   - If found in local cache: return immediately (hot path)
-   - If not found: fetch from Milvus (cold path)
-4. Cache fetched documents in local cache for future queries
+1. Tạo nhúng truy vấn
+2. Tìm kiếm chỉ mục HNSW cho hàng xóm gần nhất
+3. Kiểm tra bộ nhớ đệm cục bộ để tìm các tài liệu phù hợp
+   - Nếu tìm thấy trong bộ nhớ đệm cục bộ: trả lại ngay (đường dẫn nóng)
+   - Nếu không tìm thấy: tìm nạp từ Milvus (đường dẫn lạnh)
+4. Lưu trữ các tài liệu được tìm nạp trong bộ nhớ đệm cục bộ cho các truy vấn trong tương lai
 
-### Memory Management
+### Quản Lý Bộ Nhớ
 
-- **HNSW Index**: Limited to a configured maximum number of entries
-- **Local Cache**: Limited to a configured number of documents
-- **Eviction**: FIFO policy when limits are reached
-- **Data Persistence**: All data remains in Milvus regardless of memory limits
+- **Chỉ Mục HNSW**: Giới hạn ở số mục tối đa được cấu hình
+- **Bộ Nhớ Đệm Cục Bộ**: Giới hạn ở số lượng tài liệu được cấu hình
+- **Loại Bỏ**: Chính sách FIFO khi đạt giới hạn
+- **Tính Duy Trì Dữ Liệu**: Tất cả dữ liệu vẫn nằm trong Milvus bất kể các giới hạn bộ nhớ
 
-## Configuration
+## Cấu Hình
 
-### Basic Configuration
+### Cấu Hình Cơ Bản
 
 ```yaml
 semantic_cache:
@@ -69,85 +70,27 @@ semantic_cache:
   backend_type: "hybrid"
   similarity_threshold: 0.85
   ttl_seconds: 3600
-  
-  # Hybrid-specific settings
-  max_memory_entries: 100000  # Max entries in HNSW
-  local_cache_size: 1000      # Local document cache size
-  
-  # HNSW parameters
+
+  # Cài đặt cụ thể hybrid
+  max_memory_entries: 100000  # Mục tối đa trong HNSW
+  local_cache_size: 1000      # Kích thước bộ nhớ đệm tài liệu cục bộ
+
+  # Tham số HNSW
   hnsw_m: 16
   hnsw_ef_construction: 200
-  
-  # Milvus configuration
+
+  # Cấu hình Milvus
   backend_config_path: "config/semantic-cache/milvus.yaml"
 ```
 
-### Decision-Level Configuration (Plugin-Based)
+## Ví Dụ Sử Dụng
 
-You can also configure hybrid cache at the decision level using plugins:
-
-```yaml
-signals:
-  domains:
-    - name: "math"
-      description: "Mathematical queries"
-      mmlu_categories: ["math"]
-
-decisions:
-  - name: math_route
-    description: "Route math queries with strict caching"
-    priority: 100
-    rules:
-      operator: "AND"
-      conditions:
-        - type: "domain"
-          name: "math"
-    modelRefs:
-      - model: "openai/gpt-oss-120b"
-        use_reasoning: true
-    plugins:
-      - type: "semantic-cache"
-        configuration:
-          enabled: true
-          similarity_threshold: 0.95  # Very strict for math accuracy
-```
-
-### Configuration Parameters
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `backend_type` | string | - | Must be `"hybrid"` |
-| `similarity_threshold` | float | 0.85 | Minimum similarity for cache hit |
-| `max_memory_entries` | int | 100000 | Max entries in HNSW index |
-| `local_cache_size` | int | 1000 | Hot document cache size |
-| `hnsw_m` | int | 16 | HNSW bi-directional links |
-| `hnsw_ef_construction` | int | 200 | HNSW construction quality |
-| `backend_config_path` | string | - | Path to Milvus config file |
-
-### Milvus Configuration
-
-Create `config/semantic-cache/milvus.yaml`:
-
-```yaml
-milvus:
-  address: "localhost:19530"
-  collection_name: "semantic_cache"
-  dimension: 384
-  index_type: "HNSW"
-  metric_type: "IP"
-  params:
-    M: 16
-    efConstruction: 200
-```
-
-## Example Usage
-
-### Go Code
+### Mã Go
 
 ```go
 import "github.com/vllm-project/semantic-router/src/semantic-router/pkg/cache"
 
-// Initialize hybrid cache
+// Khởi tạo bộ nhớ đệm hybrid
 options := cache.HybridCacheOptions{
     Enabled:             true,
     SimilarityThreshold: 0.85,
@@ -161,82 +104,53 @@ options := cache.HybridCacheOptions{
 
 hybridCache, err := cache.NewHybridCache(options)
 if err != nil {
-    log.Fatalf("Failed to create hybrid cache: %v", err)
+    log.Fatalf("Không thể tạo bộ nhớ đệm hybrid: %v", err)
 }
 defer hybridCache.Close()
 
-// Add cache entry
+// Thêm mục bộ nhớ đệm
 err = hybridCache.AddEntry(
     "request-id-123",
     "gpt-4",
-    "What is quantum computing?",
-    []byte(`{"prompt": "What is quantum computing?"}`),
-    []byte(`{"response": "Quantum computing is..."}`),
+    "Máy tính lượng tử là gì?",
+    []byte(`{"prompt": "Máy tính lượng tử là gì?"}`),
+    []byte(`{"response": "Máy tính lượng tử là..."}`),
 )
 
-// Search for similar query
+// Tìm kiếm truy vấn tương tự
 response, found, err := hybridCache.FindSimilar(
     "gpt-4",
-    "Explain quantum computers",
+    "Giải thích máy tính lượng tử",
 )
 if found {
-    fmt.Printf("Cache hit! Response: %s\n", string(response))
+    fmt.Printf("Nhấn bộ nhớ đệm! Phản hồi: %s\n", string(response))
 }
 
-// Get statistics
+// Lấy thống kê
 stats := hybridCache.GetStats()
-fmt.Printf("Total entries in HNSW: %d\n", stats.TotalEntries)
-fmt.Printf("Hit ratio: %.2f%%\n", stats.HitRatio * 100)
+fmt.Printf("Tổng cộng các mục trong HNSW: %d\n", stats.TotalEntries)
+fmt.Printf("Tỷ lệ chạm: %.2f%%\n", stats.HitRatio * 100)
 ```
 
-## Monitoring and Metrics
+## Triển Khai Nhiều Phiên Bản
 
-The hybrid cache exposes metrics for monitoring:
-
-```go
-stats := hybridCache.GetStats()
-
-// Available metrics
-stats.TotalEntries  // Entries in HNSW index
-stats.HitCount      // Total cache hits
-stats.MissCount     // Total cache misses
-stats.HitRatio      // Hit ratio (0.0 - 1.0)
-```
-
-### Prometheus Metrics
-
-```
-# Cache entries in HNSW
-semantic_cache_entries{backend="hybrid"}
-
-# Cache operations
-semantic_cache_operations_total{backend="hybrid",operation="find_similar",status="hit_local"}
-semantic_cache_operations_total{backend="hybrid",operation="find_similar",status="hit_milvus"}
-semantic_cache_operations_total{backend="hybrid",operation="find_similar",status="miss"}
-
-# Cache hit ratio
-semantic_cache_hit_ratio{backend="hybrid"}
-```
-
-## Multi-Instance Deployment
-
-The hybrid cache supports multi-instance deployments where each instance maintains its own HNSW index and local cache, but shares Milvus for persistence and data consistency:
+Bộ nhớ đệm hybrid hỗ trợ triển khai nhiều phiên bản nơi mỗi phiên bản duy trì chỉ mục HNSW cho riêng nó và bộ nhớ đệm cục bộ, nhưng chia sẻ Milvus để duy trì và nhất quán dữ liệu:
 
 ```
 ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
-│  Instance 1 │   │  Instance 2 │   │  Instance 3 │
-│  HNSW Cache │   │  HNSW Cache │   │  HNSW Cache │
+│  Phiên Bản 1│   │  Phiên Bản 2│   │  Phiên Bản 3│
+│  Bộ Nhớ Đệm HNSW │   │  Bộ Nhớ Đệm HNSW │   │  Bộ Nhớ Đệm HNSW │
 └──────┬──────┘   └──────┬──────┘   └──────┬──────┘
        │                 │                 │
        └─────────────────┼─────────────────┘
                          │
                   ┌──────▼──────┐
                   │   Milvus    │
-                  │  (Shared)   │
+                  │  (Chia Sẻ)  │
                   └─────────────┘
 ```
 
-## See Also
+## Xem Thêm
 
-- [In-Memory Cache Documentation](./in-memory-cache.md)
-- [Milvus Cache Documentation](./milvus-cache.md)
+- [Tài Liệu Bộ Nhớ Đệm Trong Bộ Nhớ](./in-memory-cache.md)
+- [Tài Liệu Bộ Nhớ Đệm Milvus](./milvus-cache.md)

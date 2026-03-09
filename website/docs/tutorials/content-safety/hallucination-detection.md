@@ -1,66 +1,66 @@
-# Hallucination Detection
+# Phát hiện Ảo tưởng (Hallucination Detection)
 
-Semantic Router provides advanced hallucination detection to verify that LLM responses are grounded in the provided context. The system uses fine-tuned ModernBERT token classifiers to identify claims that are not supported by retrieval results or tool outputs.
+Semantic Router cung cấp các tính năng phát hiện ảo tưởng tiên tiến để xác minh rằng các phản hồi của LLM được dựa trên bối cảnh được cung cấp. Hệ thống sử dụng các bộ phân loại token ModernBERT được tinh chỉnh để xác định các yêu cầu không được hỗ trợ bởi kết quả truy xuất hoặc đầu ra của công cụ.
 
-## Overview
+## Tổng quan
 
-The hallucination detection system:
+Hệ thống phát hiện ảo tưởng:
 
-- **Verifies** LLM responses against provided context (RAG results, tool outputs)
-- **Identifies** unsupported claims at the token level
-- **Provides** detailed explanations using NLI (Natural Language Inference)
-- **Warns or blocks** when hallucinations are detected
-- **Integrates** seamlessly with RAG and tool-calling workflows
+- **Xác minh** các phản hồi của LLM so với bối cảnh được cung cấp (kết quả RAG, đầu ra công cụ)
+- **Xác định** các yêu cầu không được hỗ trợ ở cấp độ token
+- **Cung cấp** các giải thích chi tiết bằng NLI (Natural Language Inference)
+- **Cảnh báo hoặc chặn** khi phát hiện ảo tưởng
+- **Tích hợp** liền mạch với các quy trình RAG và gọi công cụ
 
-## How It Works
+## Cách thức hoạt động
 
-Hallucination detection operates in a three-stage pipeline:
+Phát hiện ảo tưởng hoạt động theo một pipeline ba giai đoạn:
 
-1. **Fact-Check Classification**: Determines if a query requires fact verification (factual questions vs. creative/opinion-based)
-2. **Token-Level Detection**: Analyzes LLM responses to identify unsupported claims
-3. **NLI Explanation** (optional): Provides detailed reasoning for hallucinated spans
+1. **Phân loại Kiểm chứng Thực tế**: Xác định xem một truy vấn có yêu cầu xác minh thực tế không (câu hỏi thực tế so với sáng tạo/dựa trên ý kiến)
+2. **Phát hiện Cấp độ Token**: Phân tích các phản hồi của LLM để xác định các yêu cầu không được hỗ trợ
+3. **Giải thích NLI** (tùy chọn): Cung cấp suy luận chi tiết cho các phần ảo tưởng
 
-## Configuration
+## Cấu hình
 
-### Global Model Configuration
+### Cấu hình Mô hình Global
 
-First, configure the hallucination detection models in `router-defaults.yaml`:
+Đầu tiên, cấu hình các mô hình phát hiện ảo tưởng trong `router-defaults.yaml`:
 
 ```yaml
 # router-defaults.yaml
-# Hallucination mitigation configuration
-# Disabled by default - enable in decisions via hallucination plugin
+# Cấu hình giảm nhẹ ảo tưởng
+# Tắt theo mặc định - bật trong các quyết định thông qua plugin ảo tưởng
 hallucination_mitigation:
   enabled: false
 
-  # Fact-check classifier: determines if a prompt needs fact verification
+  # Bộ phân loại kiểm chứng thực tế: xác định xem một prompt có cần xác minh thực tế không
   fact_check_model:
     model_id: "models/mom-halugate-sentinel"
     threshold: 0.6
     use_cpu: true
 
-  # Hallucination detector: verifies if LLM response is grounded in context
+  # Bộ phát hiện ảo tưởng: xác minh xem phản hồi LLM có được dựa trên bối cảnh không
   hallucination_model:
     model_id: "models/mom-halugate-detector"
     threshold: 0.8
     use_cpu: true
 
-  # NLI model: provides explanations for hallucinated spans
+  # Mô hình NLI: cung cấp giải thích cho các phần ảo tưởng
   nli_model:
     model_id: "models/mom-halugate-explainer"
     threshold: 0.9
     use_cpu: true
 ```
 
-### Enable Hallucination Detection in Decisions
+### Bật Phát hiện Ảo tưởng trong Các Quyết định
 
-Enable hallucination detection per decision using the `hallucination` plugin:
+Bật phát hiện ảo tưởng cho mỗi quyết định bằng cách sử dụng plugin `hallucination`:
 
 ```yaml
 # config.yaml
 decisions:
   - name: "general_decision"
-    description: "General questions with fact-checking"
+    description: "Các câu hỏi chung có kiểm chứng thực tế"
     priority: 100
     rules:
       operator: "OR"
@@ -76,44 +76,44 @@ decisions:
       - type: "hallucination"
         configuration:
           enabled: true
-          use_nli: true  # Enable NLI for detailed explanations
-          # Action when hallucination detected: "header", "body", "block", or "none"
+          use_nli: true  # Bật NLI để có giải thích chi tiết
+          # Hành động khi phát hiện ảo tưởng: "header", "body", "block", hoặc "none"
           hallucination_action: "header"
-          # Action when fact-check needed but no tool context: "header", "body", or "none"
+          # Hành động khi cần kiểm chứng thực tế nhưng không có bối cảnh công cụ: "header", "body", hoặc "none"
           unverified_factual_action: "header"
-          # Include detailed info (confidence, spans) in body warning
+          # Bao gồm thông tin chi tiết (độ tin cậy, phần) trong cảnh báo phần nội dung
           include_hallucination_details: true
 ```
 
-### Plugin Configuration Options
+### Tùy chọn Cấu hình Plugin
 
-| Option                          | Values                              | Description                                              |
+| Tùy chọn                       | Giá trị                         | Mô tả                                                    |
 |---------------------------------|-------------------------------------|----------------------------------------------------------|
-| `enabled`                       | `true`, `false`                     | Enable/disable hallucination detection for this decision |
-| `use_nli`                       | `true`, `false`                     | Use NLI model for detailed explanations                 |
-| `hallucination_action`          | `header`, `body`, `block`, `none`   | Action when hallucination detected                       |
-| `unverified_factual_action`     | `header`, `body`, `none`            | Action when fact-check needed but no context available   |
-| `include_hallucination_details` | `true`, `false`                     | Include confidence and spans in response body            |
+| `enabled`                       | `true`, `false`                     | Bật/tắt phát hiện ảo tưởng cho quyết định này           |
+| `use_nli`                       | `true`, `false`                     | Sử dụng mô hình NLI để có giải thích chi tiết           |
+| `hallucination_action`          | `header`, `body`, `block`, `none`   | Hành động khi phát hiện ảo tưởng                        |
+| `unverified_factual_action`     | `header`, `body`, `none`            | Hành động khi cần kiểm chứng nhưng không có bối cảnh    |
+| `include_hallucination_details` | `true`, `false`                     | Bao gồm độ tin cậy và phần trong phần nội dung phản hồi  |
 
-### Action Modes
+### Chế độ Hành động
 
-| Action   | Behavior                                      | Use Case                              |
-|----------|-----------------------------------------------|---------------------------------------|
-| `header` | Adds warning headers, allows response         | Development, monitoring               |
-| `body`   | Adds warning in response body, allows response| User-facing warnings                  |
-| `block`  | Returns error, blocks response                | Production, high-stakes applications  |
-| `none`   | No action, only logs                          | Silent monitoring                     |
+| Hành động | Hành vi                                               | Trường hợp sử dụng                     |
+|----------|-------------------------------------------------------|---------------------------------------|
+| `header` | Thêm các tiêu đề cảnh báo, cho phép phản hồi         | Phát triển, giám sát                  |
+| `body`   | Thêm cảnh báo trong phần nội dung phản hồi, cho phép | Cảnh báo hướng đến người dùng          |
+| `block`  | Trả về lỗi, chặn phản hồi                            | Sản xuất, các ứng dụng có mức cao     |
+| `none`   | Không hành động, chỉ ghi nhật ký                     | Giám sát âm thầm                      |
 
-## How Hallucination Detection Works
+## Cách thức Phát hiện Ảo tưởng Hoạt động
 
-When a request is processed:
+Khi một yêu cầu được xử lý:
 
-1. **Fact-Check Classification**: The sentinel model determines if the query needs fact verification
-2. **Context Extraction**: Tool results or RAG context are captured from the LLM response
-3. **Hallucination Detection**: If context is available, the detector analyzes the response
-4. **Action**: Based on configuration, the system adds headers, modifies body, or blocks the response
+1. **Phân loại Kiểm chứng Thực tế**: Mô hình tuần vệ xác định xem truy vấn có cần xác minh thực tế không
+2. **Trích xuất Bối cảnh**: Kết quả công cụ hoặc bối cảnh RAG được thu thập từ phản hồi của LLM
+3. **Phát hiện Ảo tưởng**: Nếu có bối cảnh, bộ phát hiện phân tích phản hồi
+4. **Hành động**: Dựa trên cấu hình, hệ thống thêm tiêu đề, sửa đổi phần nội dung, hoặc chặn phản hồi
 
-Response headers when hallucination detected:
+Các tiêu đề phản hồi khi phát hiện ảo tưởng:
 
 ```http
 X-Hallucination-Detected: true
@@ -121,11 +121,11 @@ X-Hallucination-Confidence: 0.85
 X-Unsupported-Spans: "Paris was founded in 1492"
 ```
 
-## Use Cases
+## Các trường hợp sử dụng
 
 ### RAG (Retrieval Augmented Generation)
 
-Verify that LLM responses are grounded in retrieved documents:
+Xác minh rằng các phản hồi của LLM được dựa trên các tài liệu được truy xuất:
 
 ```yaml
 plugins:
@@ -137,11 +137,11 @@ plugins:
       unverified_factual_action: "header"
 ```
 
-**Example**: A customer support bot retrieves documentation and generates answers. Hallucination detection ensures responses don't include information not present in the docs.
+**Ví dụ**: Một bot hỗ trợ khách hàng truy xuất tài liệu và tạo câu trả lời. Phát hiện ảo tưởng đảm bảo các phản hồi không bao gồm thông tin không có trong tài liệu.
 
-### Tool-Calling Workflows
+### Quy trình Gọi Công cụ
 
-Validate that LLM responses accurately reflect tool outputs:
+Xác thực rằng các phản hồi của LLM chính xác phản ánh đầu ra của công cụ:
 
 ```yaml
 plugins:
@@ -154,4 +154,4 @@ plugins:
       include_hallucination_details: true
 ```
 
-**Example**: An AI agent calls a database query tool. Hallucination detection prevents the agent from fabricating data not returned by the query.
+**Ví dụ**: Một tác nhân AI gọi công cụ truy vấn cơ sở dữ liệu. Phát hiện ảo tưởng ngăn chặn tác nhân từ việc tạo dữ liệu không được trả về bởi truy vấn.

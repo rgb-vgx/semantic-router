@@ -1,42 +1,42 @@
-# Intelligent LoRA Routing
+# Định tuyến LoRA Thông minh
 
-This guide shows you how to combine intelligent routing (domain/embedding/keyword/MCP) with LoRA adapters to route requests to domain-specific models. LoRA routing uses the classification methods from previous guides to detect intent, then automatically selects the appropriate LoRA adapter on the vLLM backend.
+Hướng dẫn này hướng dẫn bạn cách kết hợp định tuyến thông minh (domain/embedding/keyword/MCP) với các bộ điều chỉnh LoRA để định tuyến các yêu cầu đến các mô hình cụ thể cho miền. Định tuyến LoRA sử dụng các phương pháp phân loại từ các hướng dẫn trước đó để phát hiện ý định, sau đó tự động chọn bộ điều chỉnh LoRA thích hợp trên phần mềm nền tảng vLLM.
 
-## Key Advantages
+## Lợi ích chính
 
-- **Intent-aware adapter selection**: Combines any classification method (domain/embedding/keyword/MCP) with LoRA adapters
-- **Memory efficient**: Share base model weights across multiple domain adapters (&lt;1% parameters per adapter)
-- **Transparent to users**: Users send requests to one endpoint, router handles adapter selection
-- **Flexible classification**: Choose the best routing method for your use case (domain for accuracy, keyword for compliance, etc.)
+- **Lựa chọn bộ điều chỉnh nhận thức về ý định**: Kết hợp bất kỳ phương pháp phân loại nào (domain/embedding/keyword/MCP) với các bộ điều chỉnh LoRA
+- **Tiết kiệm bộ nhớ**: Chia sẻ trọng số mô hình cơ sở trên nhiều bộ điều chỉnh miền (<1% tham số trên mỗi bộ điều chỉnh)
+- **Minh bạch với người dùng**: Người dùng gửi yêu cầu đến một điểm cuối, router xử lý lựa chọn bộ điều chỉnh
+- **Phân loại linh hoạt**: Chọn phương pháp định tuyến tốt nhất cho trường hợp sử dụng của bạn (domain để có độ chính xác, từ khóa để tuân thủ, v.v.)
 
-## What Problem Does It Solve?
+## Vấn đề nó giải quyết là gì?
 
-vLLM supports multiple LoRA adapters, but users must manually specify which adapter to use. LoRA routing automates this:
+vLLM hỗ trợ nhiều bộ điều chỉnh LoRA, nhưng người dùng phải tự chỉ định bộ điều chỉnh nào sẽ sử dụng. Định tuyến LoRA tự động hóa điều này:
 
-- **Manual adapter selection**: Users don't know which adapter to use → Router classifies intent and selects adapter automatically
-- **Memory efficiency**: Multiple full models don't fit in GPU → LoRA adapters share base weights (~1% overhead per adapter)
-- **Deployment simplicity**: Managing multiple model endpoints is complex → Single vLLM instance serves all adapters
-- **Intent detection**: Generic base model lacks domain expertise → Router routes to specialized adapters based on query content
+- **Lựa chọn bộ điều chỉnh thủ công**: Người dùng không biết bộ điều chỉnh nào sẽ sử dụng → Router phân loại ý định và chọn bộ điều chỉnh tự động
+- **Hiệu quả bộ nhớ**: Nhiều mô hình đầy đủ không vừa với GPU → Các bộ điều chỉnh LoRA chia sẻ trọng số cơ sở (~1% chi phí trên mỗi bộ điều chỉnh)
+- **Đơn giản hóa triển khai**: Quản lý nhiều điểm cuối mô hình là phức tạp → Một phiên bản vLLM phục vụ tất cả các bộ điều chỉnh
+- **Phát hiện ý định**: Mô hình cơ sở chung thiếu chuyên môn về miền → Router định tuyến đến các bộ điều chỉnh chuyên biệt dựa trên nội dung truy vấn
 
-## When to Use
+## Khi nào sử dụng
 
-- **Multi-domain vLLM deployments** with LoRA adapters for different domains (technical, medical, legal, etc.)
-- **Automatic adapter selection** where you want users to send requests without knowing adapter names
-- **Combining classification + LoRA**: Use domain routing for accuracy, keyword routing for compliance, or MCP for custom logic
-- **Memory-constrained scenarios** where multiple full models don't fit but LoRA adapters do
-- **A/B testing** different adapter versions by adjusting category scores
+- **Triển khai vLLM đa miền** với các bộ điều chỉnh LoRA cho các miền khác nhau (kỹ thuật, y tế, pháp lý, v.v.)
+- **Lựa chọn bộ điều chỉnh tự động** nơi bạn muốn người dùng gửi yêu cầu mà không cần biết tên bộ điều chỉnh
+- **Kết hợp phân loại + LoRA**: Sử dụng định tuyến miền để có độ chính xác, định tuyến từ khóa để tuân thủ hoặc MCP cho logic tùy chỉnh
+- **Các tình huống bị giới hạn về bộ nhớ** nơi nhiều mô hình đầy đủ không vừa nhưng các bộ điều chỉnh LoRA có thể
+- **Kiểm tra A/B** các phiên bản bộ điều chỉnh khác nhau bằng cách điều chỉnh điểm số danh mục
 
-## Configuration
+## Cấu hình
 
-### Prerequisites
+### Các yêu cầu
 
-- A running vLLM server with LoRA support enabled
-- LoRA adapter files (fine-tuned for specific domains)
-- Envoy + the router (see [Installation](../../installation/installation.md) guide)
+- Một máy chủ vLLM đang chạy với hỗ trợ LoRA được bật
+- Các tập tin bộ điều chỉnh LoRA (tinh chỉnh cho các miền cụ thể)
+- Envoy + router (xem hướng dẫn [Cài đặt](../../installation/installation.md))
 
-### 1. Start vLLM with LoRA Adapters
+### 1. Bắt đầu vLLM với các Bộ điều chỉnh LoRA
 
-First, start your vLLM server with LoRA support enabled:
+Đầu tiên, bắt đầu máy chủ vLLM của bạn với hỗ trợ LoRA được bật:
 
 ```bash
 vllm serve meta-llama/Llama-2-7b-hf \
@@ -49,15 +49,15 @@ vllm serve meta-llama/Llama-2-7b-hf \
   --port 8000
 ```
 
-**Key flags**:
+**Các cờ chính**:
 
-- `--enable-lora`: Enables LoRA adapter support
-- `--lora-modules`: Registers LoRA adapters with their names and paths
-- Format: `adapter-name=/path/to/adapter`
+- `--enable-lora`: Bật hỗ trợ bộ điều chỉnh LoRA
+- `--lora-modules`: Đăng ký các bộ điều chỉnh LoRA với tên và đường dẫn của chúng
+- Định dạng: `adapter-name=/path/to/adapter`
 
-### 2. Router Configuration
+### 2. Cấu hình Router
 
-Put this in `config/config.yaml` (or merge into your existing config):
+Đặt cái này trong `config/config.yaml` (hoặc hợp nhất vào cấu hình hiện có của bạn):
 
 ```yaml
 # Category classifier (required for intent detection)
@@ -133,9 +133,9 @@ categories:
         use_reasoning: false
 ```
 
-## How It Works
+## Cách nó hoạt động
 
-LoRA routing combines intelligent classification with vLLM's LoRA adapter support:
+Định tuyến LoRA kết hợp phân loại thông minh với hỗ trợ bộ điều chỉnh LoRA của vLLM:
 
 ```mermaid
 graph TB
@@ -159,21 +159,21 @@ graph TB
     I --> J[Generate response with domain expertise]
 ```
 
-**Flow**:
+**Luồng**:
 
-1. **User sends query** to router (doesn't specify adapter)
-2. **Classification** using any method (domain/embedding/keyword/MCP) detects intent
-3. **Category matched** (e.g., "technical" category)
-4. **Router looks up** `model_scores` for that category
-5. **LoRA adapter selected** via `lora_name` field (e.g., "technical-lora")
-6. **Request forwarded** to vLLM with `model="technical-lora"`
-7. **vLLM loads adapter** and generates response with domain-specific knowledge
+1. **Người dùng gửi truy vấn** đến router (không chỉ định bộ điều chỉnh)
+2. **Phân loại** sử dụng bất kỳ phương pháp nào (domain/embedding/keyword/MCP) phát hiện ý định
+3. **Danh mục khớp** (ví dụ: danh mục "technical")
+4. **Router tra cứu** `model_scores` cho danh mục đó
+5. **Bộ điều chỉnh LoRA được chọn** thông qua trường `lora_name` (ví dụ: "technical-lora")
+6. **Yêu cầu được chuyển tiếp** đến vLLM với `model="technical-lora"`
+7. **vLLM tải bộ điều chỉnh** và tạo phản hồi với kiến thức cụ thể cho miền
 
-**Key insight**: The classification method (domain/embedding/keyword/MCP) determines the category, then the category's `lora_name` determines which adapter to use.
+**Thấu hiểu chính**: Phương pháp phân loại (domain/embedding/keyword/MCP) xác định danh mục, sau đó `lora_name` của danh mục đó xác định bộ điều chỉnh nào sẽ sử dụng.
 
-### Test Domain Aware LoRA Routing
+### Kiểm tra Định tuyến LoRA Nhận thức về Miền
 
-Send test queries and verify they're classified correctly:
+Gửi các truy vấn kiểm tra và xác minh chúng được phân loại chính xác:
 
 ```bash
 # Technical query
@@ -187,42 +187,42 @@ curl -X POST http://localhost:8080/v1/chat/completions \
   -d '{"model": "MoM", "messages": [{"role": "user", "content": "What causes high blood pressure?"}]}'
 ```
 
-Check the router logs to confirm the correct LoRA adapter is selected for each query.
+Kiểm tra nhật ký router để xác nhận bộ điều chỉnh LoRA chính xác được chọn cho mỗi truy vấn.
 
-## Real-World Use Cases
+## Các trường hợp sử dụng thực tế
 
-### 1. Healthcare Platform (Domain Routing + LoRA)
+### 1. Nền tảng Chăm sóc sức khỏe (Định tuyến Miền + LoRA)
 
-**Problem**: Medical queries need specialized adapters, but users don't know which to use
-**Solution**: Domain routing classifies into diagnosis/pharmacy/mental-health, routes to corresponding LoRA adapters
-**Impact**: Automatic adapter selection, 70GB memory vs 210GB for 3 full models
+**Vấn đề**: Các truy vấn y tế cần các bộ điều chỉnh chuyên biệt, nhưng người dùng không biết sẽ sử dụng cái nào
+**Giải pháp**: Định tuyến miền phân loại thành chẩn đoán/dược phòng/sức khỏe tâm thần, định tuyến đến các bộ điều chỉnh LoRA tương ứng
+**Tác động**: Lựa chọn bộ điều chỉnh tự động, bộ nhớ 70GB so với 210GB cho 3 mô hình đầy đủ
 
-### 2. Legal Tech (Keyword Routing + LoRA for Compliance)
+### 2. Công nghệ Pháp lý (Định tuyến Từ khóa + LoRA để Tuân thủ)
 
-**Problem**: Compliance requires auditable routing to jurisdiction-specific legal adapters
-**Solution**: Keyword routing detects "US law"/"EU law"/"contract" keywords, routes to compliant LoRA adapters
-**Impact**: 100% auditable routing decisions, 95% citation accuracy with specialized adapters
+**Vấn đề**: Tuân thủ yêu cầu định tuyến có thể kiểm toán đến các bộ điều chỉnh pháp lý cụ thể về khu vực pháp lý
+**Giải pháp**: Định tuyến từ khóa phát hiện các từ khóa "US law"/"EU law"/"contract", định tuyến đến các bộ điều chỉnh LoRA tuân thủ
+**Tác động**: Định tuyến 100% có thể kiểm toán, độ chính xác trích dẫn 95% với các bộ điều chỉnh chuyên biệt
 
-### 3. Customer Support (Embedding Routing + LoRA)
+### 3. Hỗ trợ khách hàng (Định tuyến Nhúng + LoRA)
 
-**Problem**: Support queries span IT/HR/finance, users phrase questions in many ways
-**Solution**: Embedding routing matches semantic intent, routes to department-specific LoRA adapters
-**Impact**: Handles paraphrases, single endpoint serves all departments with &lt;10ms adapter switching
+**Vấn đề**: Các truy vấn hỗ trợ bao gồm CNTT/Nhân sự/Tài chính, người dùng diễn đạt câu hỏi theo nhiều cách
+**Giải pháp**: Định tuyến nhúng khớp với ý định ngữ nghĩa, định tuyến đến các bộ điều chỉnh LoRA cụ thể cho phòng ban
+**Tác động**: Xử lý các diễn đạt lại, một điểm cuối phục vụ tất cả các phòng ban với chuyển đổi bộ điều chỉnh <10ms
 
-### 4. EdTech Platform (Domain Routing + LoRA)
+### 4. Nền tảng EdTech (Định tuyến Miền + LoRA)
 
-**Problem**: Students ask math/science/literature questions, need subject-specific tutors
-**Solution**: Domain routing classifies academic subject, routes to subject-specific LoRA adapters
-**Impact**: 4 specialized tutors for cost of 1.2 base models, 70% cost savings
+**Vấn đề**: Sinh viên hỏi các câu hỏi toán/khoa học/văn học, cần những gia sư cụ thể cho chủ đề
+**Giải pháp**: Định tuyến miền phân loại môn học, định tuyến đến các bộ điều chỉnh LoRA cụ thể cho chủ đề
+**Tác động**: 4 gia sư chuyên biệt với chi phí 1,2 mô hình cơ sở, tiết kiệm 70% chi phí
 
-### 5. Multi-Tenant SaaS (MCP Routing + LoRA)
+### 5. SaaS Đa người thuê (Định tuyến MCP + LoRA)
 
-**Problem**: Each tenant has custom LoRA adapters, need dynamic routing based on tenant ID
-**Solution**: MCP routing queries tenant database, returns tenant-specific LoRA adapter name
-**Impact**: 1000+ tenants with custom adapters, private routing logic, A/B testing support
+**Vấn đề**: Mỗi người thuê có các bộ điều chỉnh LoRA tùy chỉnh, cần định tuyến động dựa trên ID người thuê
+**Giải pháp**: Định tuyến MCP truy vấn cơ sở dữ liệu người thuê, trả về tên bộ điều chỉnh LoRA cụ thể cho người thuê
+**Tác động**: 1000+ người thuê với các bộ điều chỉnh tùy chỉnh, logic định tuyến riêng tư, hỗ trợ kiểm tra A/B
 
-## Next Steps
+## Các bước tiếp theo
 
-- See [complete LoRA routing example](https://github.com/vllm-project/semantic-router/blob/main/config/intelligent-routing/in-tree/lora_routing.yaml)
-- Learn about [decision configuration](../../installation/configuration.md#decision-rules---signal-fusion)
-- Read [modular LoRA blog post](https://blog.vllm.ai/2025/10/27/semantic-router-modular.html) for architecture details
+- Xem [ví dụ định tuyến LoRA hoàn chỉnh](https://github.com/vllm-project/semantic-router/blob/main/config/intelligent-routing/in-tree/lora_routing.yaml)
+- Tìm hiểu về [cấu hình quyết định](../../installation/configuration.md#decision-rules---signal-fusion)
+- Đọc [bài viết blog LoRA mô-đun](https://blog.vllm.ai/2025/10/27/semantic-router-modular.html) để biết chi tiết kiến trúc

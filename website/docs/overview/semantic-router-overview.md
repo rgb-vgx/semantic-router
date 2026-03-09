@@ -2,58 +2,58 @@
 sidebar_position: 2
 ---
 
-# What is Semantic Router?
+# Semantic Router là gì?
 
-**Semantic Router** is an intelligent routing layer that dynamically selects the most suitable language model for each query based on multiple signals extracted from the request.
+**Semantic Router** là một lớp định tuyến thông minh động chọn mô hình ngôn ngữ phù hợp nhất cho mỗi truy vấn dựa trên nhiều tín hiệu được trích xuất từ yêu cầu.
 
-## The Problem
+## Vấn đề
 
-Traditional LLM deployments use a single model for all tasks:
-
-```text
-User Query → Single LLM → Response
-```
-
-**Problems**:
-
-- High cost for simple queries
-- Suboptimal performance for specialized tasks
-- No security or compliance controls
-- Poor resource utilization
-
-## The Solution
-
-Semantic Router uses **signal-driven decision making** to route queries intelligently:
+Triển khai LLM truyền thống sử dụng một mô hình duy nhất cho tất cả các tác vụ:
 
 ```text
-User Query → Signal Extraction → Decision Engine → Best Model → Response
+Truy vấn người dùng → Single LLM → Phản hồi
 ```
 
-**Benefits**:
+**Vấn đề**:
 
-- Cost-effective routing (use smaller models for simple tasks)
-- Better quality (use specialized models for their strengths)
-- Built-in security (jailbreak detection, PII filtering)
-- Flexible and extensible (plugin architecture)
+- Chi phí cao cho các truy vấn đơn giản
+- Hiệu suất không tối ưu cho các tác vụ chuyên biệt
+- Không có kiểm soát bảo mật hoặc tuân thủ
+- Sử dụng tài nguyên kém
 
-## How It Works
+## Giải pháp
 
-### 1. Signal Extraction
+Semantic Router sử dụng **signal-driven decision making** để định tuyến truy vấn một cách thông minh:
 
-The router extracts multiple types of signals from each request:
+```text
+Truy vấn người dùng → Trích xuất tín hiệu → Công cụ quyết định → Mô hình tốt nhất → Phản hồi
+```
 
-| Signal Type | What It Detects | Example |
+**Lợi ích**:
+
+- Định tuyến hiệu quả về chi phí (sử dụng mô hình nhỏ hơn cho các tác vụ đơn giản)
+- Chất lượng tốt hơn (sử dụng mô hình chuyên biệt cho những điểm mạnh của chúng)
+- Bảo mật tích hợp sẵn (phát hiện jailbreak, lọc PII)
+- Linh hoạt và mở rộng (kiến trúc plugin)
+
+## Cách nó hoạt động
+
+### 1. Trích xuất tín hiệu
+
+Bộ định tuyến trích xuất nhiều loại tín hiệu từ mỗi yêu cầu:
+
+| Loại tín hiệu | Nó phát hiện những gì | Ví dụ |
 |------------|----------------|---------|
-| **keyword** | Specific terms and patterns | "calculate", "prove", "debug" |
-| **embedding** | Semantic meaning | Math intent, code intent, creative intent |
-| **domain** | Knowledge domain | Mathematics, computer science, history |
-| **fact_check** | Need for verification | Factual claims, medical advice |
-| **user_feedback** | User satisfaction | "That's wrong", "try again" |
-| **preference** | Route preference | Complex intent matching |
+| **keyword** | Các thuật ngữ và mẫu cụ thể | "calculate", "prove", "debug" |
+| **embedding** | Ý nghĩa ngữ nghĩa | Ý định toán học, ý định mã, ý định sáng tạo |
+| **domain** | Lĩnh vực kiến thức | Toán học, khoa học máy tính, lịch sử |
+| **fact_check** | Cần xác minh | Các tuyên bố thực tế, lời khuyên y tế |
+| **user_feedback** | Sự hài lòng của người dùng | "That's wrong", "try again" |
+| **preference** | Ưu tiên định tuyến | Khớp ý định phức tạp |
 
-### 2. Decision Making
+### 2. Quyết định
 
-Signals are combined using logical rules to make routing decisions:
+Các tín hiệu được kết hợp bằng cách sử dụng các quy tắc logic để đưa ra quyết định định tuyến:
 
 ```yaml
 decisions:
@@ -70,20 +70,20 @@ decisions:
         weight: 1.0
 ```
 
-**How it works**: If the query contains math keywords **AND** is classified as mathematics domain, route to the math model.
+**Cách nó hoạt động**: Nếu truy vấn chứa từ khóa toán học **AND** được phân loại là miền toán học, hãy định tuyến tới mô hình toán học.
 
-### 3. Model Selection
+### 3. Lựa chọn mô hình
 
-Based on the decision, the router selects the best model:
+Dựa trên quyết định, bộ định tuyến chọn mô hình tốt nhất:
 
-- **Math queries** → Math-specialized model (e.g., Qwen-Math)
-- **Code queries** → Code-specialized model (e.g., DeepSeek-Coder)
-- **Creative queries** → Creative model (e.g., Claude)
-- **Simple queries** → Lightweight model (e.g., Llama-3-8B)
+- **Math queries** → Mô hình chuyên biệt về toán (ví dụ: Qwen-Math)
+- **Code queries** → Mô hình chuyên biệt về mã (ví dụ: DeepSeek-Coder)
+- **Creative queries** → Mô hình sáng tạo (ví dụ: Claude)
+- **Simple queries** → Mô hình nhẹ (ví dụ: Llama-3-8B)
 
 ### 4. Plugin Chain
 
-Before and after model execution, plugins process the request/response:
+Trước và sau khi thực thi mô hình, các plugin xử lý yêu cầu/bản phản hồi:
 
 ```yaml
 plugins:
@@ -94,68 +94,68 @@ plugins:
   - type: "hallucination"     # Verify facts
 ```
 
-## Key Concepts
+## Các khái niệm chính
 
 ### Mixture of Models (MoM)
 
-Unlike Mixture of Experts (MoE) which operates within a single model, Mixture of Models operates at the **system level**:
+Không giống như Mixture of Experts (MoE) hoạt động trong một mô hình duy nhất, Mixture of Models hoạt động ở **cấp độ hệ thống**:
 
-| Aspect | Mixture of Experts (MoE) | Mixture of Models (MoM) |
+| khía cạnh | Mixture of Experts (MoE) | Mixture of Models (MoM) |
 |--------|-------------------------|------------------------|
-| **Scope** | Within a single model | Across multiple models |
-| **Routing** | Internal gating network | External semantic router |
-| **Models** | Shared architecture | Independent models |
-| **Flexibility** | Fixed at training time | Dynamic at runtime |
-| **Use Case** | Model efficiency | System intelligence |
+| **Scope** | Trong một mô hình duy nhất | Trên nhiều mô hình |
+| **Routing** | Mạng gating nội bộ | Bộ định tuyến ngữ nghĩa bên ngoài |
+| **Models** | Kiến trúc chia sẻ | Mô hình độc lập |
+| **Flexibility** | Cố định tại thời điểm đào tạo | Động tại thời chạy |
+| **Use Case** | Hiệu quả mô hình | Trí thông minh cấp độ hệ thống |
 
 ### Signal-Driven Decisions
 
-Traditional routing uses simple rules:
+Định tuyến truyền thống sử dụng các quy tắc đơn giản:
 
 ```yaml
-# Traditional: Simple keyword matching
+# Truyền thống: Khớp từ khóa đơn giản
 if "math" in query:
     route_to_math_model()
 ```
 
-Signal-driven routing uses multiple signals:
+Định tuyến dựa trên tín hiệu sử dụng nhiều tín hiệu:
 
 ```yaml
-# Signal-driven: Multiple signals combined
+# Dựa trên tín hiệu: Nhiều tín hiệu được kết hợp
 if (has_math_keywords AND is_math_domain) OR has_high_math_embedding:
     route_to_math_model()
 ```
 
-**Benefits**:
+**Lợi ích**:
 
-- More accurate routing
-- Handles edge cases better
-- Adapts to context
-- Reduces false positives
+- Định tuyến chính xác hơn
+- Xử lý trường hợp cạnh tốt hơn
+- Thích ứng với bảng ngữ cảnh
+- Giảm dương tính giả
 
-## Real-World Example
+## Ví dụ thực tế
 
-**User Query**: "Prove that the square root of 2 is irrational"
+**Truy vấn người dùng**: "Prove that the square root of 2 is irrational"
 
-**Signal Extraction**:
+**Trích xuất tín hiệu**:
 
 - keyword: ["prove", "square root", "irrational"] ✓
-- embedding: 0.89 similarity to math queries ✓
+- embedding: 0.89 tương tự với truy vấn toán học ✓
 - domain: "mathematics" ✓
 
-**Decision**: Route to `qwen-math` (all math signals agree)
+**Quyết định**: Định tuyến tới `qwen-math` (tất cả các tín hiệu toán học đều đồng ý)
 
-**Plugins Applied**:
+**Plugin được áp dụng**:
 
 - semantic-cache: Cache miss, proceed
-- jailbreak: No adversarial patterns
-- system_prompt: Added "Provide rigorous mathematical proof"
-- hallucination: Enabled for verification
+- jailbreak: Không có mẫu đối nghịch
+- system_prompt: Thêm "Provide rigorous mathematical proof"
+- hallucination: Bật để xác minh
 
-**Result**: High-quality mathematical proof from specialized model
+**Kết quả**: Bằng chứng toán học chất lượng cao từ mô hình chuyên biệt
 
-## Next Steps
+## Bước tiếp theo
 
-- [What is Collective Intelligence?](collective-intelligence.md) - How signals create system intelligence
-- [What is Signal-Driven Decision?](signal-driven-decisions.md) - Deep dive into the decision engine
-- [Configuration Guide](../installation/configuration.md) - Set up your semantic router
+- [Collective Intelligence là gì?](collective-intelligence.md) - Cách các tín hiệu tạo ra trí thông minh hệ thống
+- [Signal-Driven Decision là gì?](signal-driven-decisions.md) - Tìm hiểu sâu về công cụ quyết định
+- [Hướng dẫn cấu hình](../installation/configuration.md) - Thiết lập bộ định tuyến ngữ nghĩa của bạn

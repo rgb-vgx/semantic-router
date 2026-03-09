@@ -1,99 +1,99 @@
-# Thompson Sampling Selection
+# Lựa Chọn Thompson Sampling
 
-Thompson Sampling is a Bayesian approach to the exploration-exploitation tradeoff. It naturally balances trying new models (exploration) with using known good models (exploitation), applied to LLM model selection as a multi-armed bandit problem.
+Thompson Sampling là một cách tiếp cận Bayesian để giải quyết sự đánh đổi giữa khám phá và khai thác. Nó tự nhiên cân bằng giữa việc thử các mô hình mới (khám phá) với việc sử dụng các mô hình được biết là tốt (khai thác), được áp dụng cho lựa chọn mô hình LLM như một vấn đề máy trò chơi đa tay.
 
-> **Reference**: [A Tutorial on Thompson Sampling](https://arxiv.org/abs/1707.02038) by Russo, Van Roy, Kazerouni, Osband & Wen. This comprehensive tutorial covers the theoretical foundations we apply here.
+> **Tham khảo**: [A Tutorial on Thompson Sampling](https://arxiv.org/abs/1707.02038) của Russo, Van Roy, Kazerouni, Osband & Wen. Hướng dẫn toàn diện này bao gồm các nền tảng lý thuyết mà chúng tôi áp dụng ở đây.
 
-## Algorithm Flow
+## Luồng Thuật toán
 
 ```mermaid
 flowchart TD
-    A[User Query] --> B[Get User ID]
-    B --> C[For Each Model]
-    C --> D[Get Beta Distribution<br/>α, β parameters]
-    D --> E[Sample from Beta α,β]
-    E --> F{All Models Done?}
-    F -->|No| C
-    F -->|Yes| G[Select Model with<br/>Highest Sample]
-    G --> H[Route to Model]
-    H --> I[Get Response]
-    I --> J{User Feedback?}
-    J -->|Positive| K[α += 1]
-    J -->|Negative| L[β += 1]
-    J -->|None| M[Done]
+    A[Truy vấn của người dùng] --> B[Nhận ID người dùng]
+    B --> C[Cho mỗi mô hình]
+    C --> D[Nhận Phân phối Beta<br/>tham số α, β]
+    D --> E[Mẫu từ Beta α,β]
+    E --> F{Tất cả mô hình xong?}
+    F -->|Không| C
+    F -->|Có| G[Chọn mô hình có<br/>mẫu cao nhất]
+    G --> H[Định tuyến đến mô hình]
+    H --> I[Lấy phản hồi]
+    I --> J{Phản hồi người dùng?}
+    J -->|Tích cực| K[α += 1]
+    J -->|Tiêu cực| L[β += 1]
+    J -->|Không| M[Hoàn thành]
     K --> M
     L --> M
-    
+
     style E stroke:#000,stroke-width:2px,stroke-dasharray: 5 5
     style G stroke:#000,stroke-width:2px,stroke-dasharray: 5 5
 ```
 
-## Mathematical Foundation
+## Nền Tảng Toán Học
 
-### Beta Distribution
+### Phân Phối Beta
 
-Each model maintains a Beta distribution representing success probability:
+Mỗi mô hình duy trì một phân phối Beta đại diện cho xác suất thành công:
 
 ```text
 P(θ | α, β) = Beta(α, β)
 
-where:
+trong đó:
   α = prior_alpha + successes
   β = prior_beta + failures
   θ = true success probability (unknown)
 ```
 
-### Sampling Process
+### Quá Trình Lấy Mẫu
 
-For each selection, sample from each model's posterior:
-
-```text
-θ_i ~ Beta(α_i, β_i)   for each model i
-
-Select model: argmax_i(θ_i)
-```
-
-### Bayesian Update
-
-After feedback, update the selected model's distribution:
+Đối với mỗi lựa chọn, lấy mẫu từ phân phối hậu của mỗi mô hình:
 
 ```text
-If success: α' = α + 1
-If failure: β' = β + 1
+θ_i ~ Beta(α_i, β_i)   cho mỗi mô hình i
+
+Chọn mô hình: argmax_i(θ_i)
 ```
 
-### Expected Value and Variance
+### Cập Nhật Bayes
+
+Sau khi phản hồi, cập nhật phân phối của mô hình được chọn:
 
 ```text
-E[θ] = α / (α + β)           # Expected success rate
-Var[θ] = αβ / ((α+β)²(α+β+1))  # Uncertainty
+Nếu thành công: α' = α + 1
+Nếu thất bại: β' = β + 1
 ```
 
-High variance → more exploration (uncertain model)
-Low variance → more exploitation (confident about model)
+### Giá Trị Dự Kiến và Phương Sai
 
-## Core Algorithm (Go)
+```text
+E[θ] = α / (α + β)           # Tỷ lệ thành công dự kiến
+Var[θ] = αβ / ((α+β)²(α+β+1))  # Không chắc chắn
+```
+
+Phương sai cao → khám phá nhiều hơn (mô hình không chắc chắn)
+Phương sai thấp → khai thác nhiều hơn (tự tin về mô hình)
+
+## Thuật Toán Cốt Lõi (Go)
 
 ```go
-// Select using Thompson Sampling
+// Chọn sử dụng Thompson Sampling
 func (s *ThompsonSelector) Select(ctx context.Context, selCtx *SelectionContext) (*SelectionResult, error) {
     var bestModel string
     var bestSample float64 = -1
-    
+
     userID := s.getUserID(selCtx)
-    
+
     for _, candidate := range selCtx.CandidateModels {
         alpha, beta := s.getParams(userID, candidate.Model)
-        
-        // Sample from Beta distribution
+
+        // Mẫu từ phân phối Beta
         sample := s.sampleBeta(alpha, beta)
-        
+
         if sample > bestSample {
             bestSample = sample
             bestModel = candidate.Model
         }
     }
-    
+
     return &SelectionResult{
         SelectedModel: bestModel,
         Score:         bestSample,
@@ -101,10 +101,10 @@ func (s *ThompsonSelector) Select(ctx context.Context, selCtx *SelectionContext)
     }, nil
 }
 
-// UpdateFeedback adjusts Beta parameters
+// UpdateFeedback điều chỉnh các tham số Beta
 func (s *ThompsonSelector) UpdateFeedback(userID, model string, success bool) {
     alpha, beta := s.getParams(userID, model)
-    
+
     if success {
         s.setParams(userID, model, alpha+1, beta)
     } else {
@@ -113,27 +113,27 @@ func (s *ThompsonSelector) UpdateFeedback(userID, model string, success bool) {
 }
 ```
 
-## How It Works
+## Cách Hoạt Động
 
-1. Each model maintains a Beta distribution representing its success probability
-2. For each request, sample from each model's distribution
-3. Select the model with the highest sampled value
-4. Update the distribution based on feedback
+1. Mỗi mô hình duy trì một phân phối Beta đại diện cho xác suất thành công của nó
+2. Đối với mỗi yêu cầu, lấy mẫu từ phân phối của mỗi mô hình
+3. Chọn mô hình có giá trị mẫu cao nhất
+4. Cập nhật phân phối dựa trên phản hồi
 
-This approach automatically explores uncertain options while exploiting known good ones.
+Cách tiếp cận này tự động khám phá các tùy chọn không chắc chắn trong khi khai thác các tùy chọn được biết là tốt.
 
-## Configuration
+## Cấu Hình
 
 ```yaml
 decision:
   algorithm:
     type: thompson
     thompson:
-      prior_alpha: 1.0        # Prior successes (optimistic: higher)
-      prior_beta: 1.0         # Prior failures (pessimistic: higher)
-      per_user: true          # Per-user personalization
-      decay_factor: 0.1       # Decay old observations
-      min_samples: 10         # Minimum samples before exploitation
+      prior_alpha: 1.0        # Thành công trước (lạc quan: cao hơn)
+      prior_beta: 1.0         # Thất bại trước (bi quan: cao hơn)
+      per_user: true          # Cá nhân hóa cho mỗi người dùng
+      decay_factor: 0.1       # Phân rã các quan sát cũ
+      min_samples: 10         # Mẫu tối thiểu trước khi khai thác
 
 models:
   - name: gpt-4
@@ -144,55 +144,55 @@ models:
     backend: anthropic
 ```
 
-## Key Parameters
+## Tham Số Chính
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `prior_alpha` | 1.0 | Prior successes; higher = more optimistic |
-| `prior_beta` | 1.0 | Prior failures; higher = more pessimistic |
-| `per_user` | false | Maintain separate distributions per user |
-| `decay_factor` | 0.0 | Decay rate for old observations (0 = no decay) |
-| `min_samples` | 10 | Minimum samples before full exploitation |
+| Tham số | Mặc định | Mô tả |
+|---------|---------|-------|
+| `prior_alpha` | 1.0 | Thành công trước; cao hơn = lạc quan hơn |
+| `prior_beta` | 1.0 | Thất bại trước; cao hơn = bi quan hơn |
+| `per_user` | false | Duy trì phân phối riêng biệt cho mỗi người dùng |
+| `decay_factor` | 0.0 | Tỷ lệ decay cho các quan sát cũ (0 = không decay) |
+| `min_samples` | 10 | Mẫu tối thiểu trước khi khai thác đầy đủ |
 
-## Prior Settings
+## Cài Đặt Trước
 
-The prior (alpha, beta) shapes initial behavior:
+Trước đó (alpha, beta) hình dạng hành vi ban đầu:
 
-| Setting | Behavior |
-|---------|----------|
-| (1, 1) | Uniform prior - equal exploration |
-| (2, 1) | Optimistic - assume models are good |
-| (1, 2) | Pessimistic - assume models need proving |
-| (10, 10) | Confident prior - slow to change |
+| Cài đặt | Hành vi |
+|--------|--------|
+| (1, 1) | Trước đó thống nhất - khám phá bằng nhau |
+| (2, 1) | Lạc quan - giả định các mô hình tốt |
+| (1, 2) | Bi quan - giả định các mô hình cần chứng minh |
+| (10, 10) | Trước đó tự tin - chậm thay đổi |
 
-## Per-User Personalization
+## Cá Nhân Hóa Cho Mỗi Người Dùng
 
-With `per_user: true`, each user gets their own model distributions:
+Với `per_user: true`, mỗi người dùng nhận phân phối riêng của họ:
 
 ```yaml
 thompson:
   per_user: true
 ```
 
-This allows the system to learn that User A prefers GPT-4 while User B prefers Claude.
+Điều này cho phép hệ thống học tập rằng Người dùng A thích GPT-4 trong khi Người dùng B thích Claude.
 
-## Feedback Integration
+## Tích Hợp Phản Hồi
 
-Thompson Sampling updates via the feedback API:
+Thompson Sampling cập nhật thông qua API phản hồi:
 
 ```bash
-# Positive feedback (success)
+# Phản hồi tích cực (thành công)
 curl -X POST http://localhost:8080/api/v1/feedback \
   -d '{"request_id": "req-123", "model": "gpt-4", "rating": 1}'
 
-# Negative feedback (failure)
+# Phản hồi tiêu cực (thất bại)
 curl -X POST http://localhost:8080/api/v1/feedback \
   -d '{"request_id": "req-456", "model": "gpt-4", "rating": -1}'
 ```
 
-## Best Practices
+## Các Thực Hành Tốt Nhất
 
-1. **Start with uniform priors**: (1, 1) unless you have prior knowledge
-2. **Enable per-user for personalization**: Learn individual preferences
-3. **Use decay for non-stationary environments**: When model quality changes
-4. **Set min_samples appropriately**: Too low = premature exploitation
+1. **Bắt đầu với tiền đồng nhất**: (1, 1) trừ khi bạn có kiến thức trước
+2. **Kích hoạt cá nhân hóa cho mỗi người dùng**: Tìm hiểu sở thích cá nhân
+3. **Sử dụng decay cho môi trường không cố định**: Khi chất lượng mô hình thay đổi
+4. **Đặt min_samples thích hợp**: Quá thấp = khai thác sớm

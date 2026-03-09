@@ -1,132 +1,132 @@
-# Metrics & Monitoring
+# Số Liệu & Giám Sát
 
-Metrics collection and visualization for Semantic Router using Prometheus and Grafana.
+Thu thập và trực quan hóa số liệu cho Bộ Định Tuyến Ngữ Nghĩa bằng Prometheus và Grafana.
 
 ---
 
-## 1. Metrics & Endpoints
+## 1. Số Liệu & Điểm Cuối
 
-| Component                | Endpoint                  | Notes                                      |
+| Thành phần | Điểm cuối | Ghi chú |
 | ------------------------ | ------------------------- | ------------------------------------------ |
-| Router metrics           | `:9190/metrics`           | Prometheus format (flag: `--metrics-port`) |
-| Router health            | `:8080/health`            | HTTP readiness/liveness                    |
-| Envoy metrics (optional) | `:19000/stats/prometheus` | If Envoy is enabled                        |
+| Số liệu định tuyến | `:9190/metrics` | Định dạng Prometheus (cờ: `--metrics-port`) |
+| Sức khỏe định tuyến | `:8080/health` | HTTP sẵn sàng/sống |
+| Số liệu Envoy (tùy chọn) | `:19000/stats/prometheus` | Nếu Envoy được bật |
 
-**Configuration location**: `tools/observability/`  
-**Dashboard**: `tools/observability/llm-router-dashboard.json`
+**Vị trí cấu hình**: `tools/observability/`
+**Bảng Điều Khiển**: `tools/observability/llm-router-dashboard.json`
 
 ---
 
-## 2. Local Mode (Router on Host)
+## 2. Chế Độ Cục Bộ (Định Tuyến Trên Máy Chủ)
 
-Run router natively on host, observability in Docker.
+Chạy router gốc trên máy chủ, quan sát được trong Docker.
 
-### Quick Start
+### Khởi Động Nhanh
 
 ```bash
-# Start router
+# Máy chủ bắt đầu
 make run-router
 
-# Start observability
+# Bắt đầu quan sát được
 make o11y-local
 ```
 
-**Access:**
+**Tiếp cận:**
 
 - Prometheus: http://localhost:9090
 - Grafana: http://localhost:3000 (admin/admin)
 
-**Verify targets:**
+**Xác minh mục tiêu:**
 
 ```bash
-# Check Prometheus scrapes localhost:9190
+# Kiểm tra Prometheus Scrapes localhost:9190
 open http://localhost:9090/targets
 ```
 
-**Stop:**
+**Dừng:**
 
 ```bash
 make stop-observability
 ```
 
-### Configuration
+### Cấu Hình
 
-All configs in `tools/observability/`:
+Tất cả các cấu hình trong `tools/observability/`:
 
-- `prometheus.yaml` - Scrapes the target from the `ROUTER_TARGET` env var (default: `localhost:9190`)
-- `grafana-datasource.yaml` - Points to `localhost:9090`
-- `grafana-dashboard.yaml` - Dashboard provisioning
-- `llm-router-dashboard.json` - Dashboard definition
+- `prometheus.yaml` - Scrapes mục tiêu từ biến env `ROUTER_TARGET` (mặc định: `localhost:9190`)
+- `grafana-datasource.yaml` - Trỏ đến `localhost:9090`
+- `grafana-dashboard.yaml` - Cấp phát bảng điều khiển
+- `llm-router-dashboard.json` - Định nghĩa bảng điều khiển
 
-### Troubleshooting
+### Khắc Phục Sự Cố
 
-| Issue         | Fix                                     |
+| Vấn đề | Sửa chữa |
 | ------------- | --------------------------------------- |
-| Target DOWN   | Start router: `make run-router`         |
-| No metrics    | Generate traffic, check `:9190/metrics` |
-| Port conflict | Change port or stop conflicting service |
+| Mục tiêu XUỐNG | Máy chủ bắt đầu: `make run-router` |
+| Không có số liệu | Tạo lưu lượng, kiểm tra `:9190/metrics` |
+| Xung đột cổng | Thay đổi cổng hoặc dừng dịch vụ xung đột |
 
 ---
 
-## 3. Docker Compose Mode
+## 3. Chế Độ Docker Compose
 
-All services in Docker containers.
+Tất cả các dịch vụ trong các vùng chứa Docker.
 
-### Quick Start
+### Khởi Động Nhanh
 
 ```bash
-# Start full stack (includes observability)
+# Bắt đầu toàn bộ ngăn xếp (bao gồm quan sát được)
 docker compose -f deploy/docker-compose/docker-compose.yml up --build
 
-# Or with testing profile
+# Hoặc với hồ sơ kiểm tra
 docker compose -f deploy/docker-compose/docker-compose.yml --profile testing up --build
 ```
 
-**Access:**
+**Tiếp cận:**
 
 - Prometheus: http://localhost:9090
 - Grafana: http://localhost:3000 (admin/admin)
 
-**Expected targets:**
+**Mục tiêu dự kiến:**
 
 - `semantic-router:9190`
-- `envoy-proxy:19000` (optional)
+- `envoy-proxy:19000` (tùy chọn)
 
-### Configuration
+### Cấu Hình
 
-Same configs as local mode (`tools/observability/`), but:
+Các cấu hình giống như chế độ cục bộ (`tools/observability/`), nhưng:
 
 - `ROUTER_TARGET=semantic-router:9190`
 - `PROMETHEUS_URL=prometheus:9090`
-- Uses `semantic-network` bridge network
+- Sử dụng mạng cầu `semantic-network`
 
 ---
 
-## 4. Kubernetes Mode
+## 4. Chế Độ Kubernetes
 
-Production-ready Prometheus + Grafana for K8s clusters.
+Prometheus + Grafana sản xuất cho các cụm K8s.
 
-> **Namespace**: `vllm-semantic-router-system`
+> **Không gian tên**: `vllm-semantic-router-system`
 
-### Components
+### Thành Phần
 
-| Component  | Purpose                               | Location                                       |
+| Thành phần | Mục đích | Vị trí |
 | ---------- | ------------------------------------- | ---------------------------------------------- |
-| Prometheus | Scrapes router metrics, 15d retention | `deploy/kubernetes/observability/prometheus/`  |
-| Grafana    | Dashboard visualization               | `deploy/kubernetes/observability/grafana/`     |
-| Ingress    | Optional external access              | `deploy/kubernetes/observability/ingress.yaml` |
+| Prometheus | Scrapes số liệu định tuyến, giữ lại 15 ngày | `deploy/kubernetes/observability/prometheus/` |
+| Grafana | Trực quan hóa bảng điều khiển | `deploy/kubernetes/observability/grafana/` |
+| Ingress | Tiếp cận bên ngoài tùy chọn | `deploy/kubernetes/observability/ingress.yaml` |
 
-### Deploy
+### Triển Khai
 
 ```bash
-# Apply manifests
+# Áp dụng bản kê khai
 kubectl apply -k deploy/kubernetes/observability/
 
-# Verify
+# Xác minh
 kubectl get pods -n vllm-semantic-router-system
 ```
 
-### Access
+### Tiếp Cận
 
 **Port-forward:**
 
@@ -135,11 +135,11 @@ kubectl port-forward svc/prometheus 9090:9090 -n vllm-semantic-router-system
 kubectl port-forward svc/grafana 3000:3000 -n vllm-semantic-router-system
 ```
 
-**Ingress:** Customize `ingress.yaml` with your domain and TLS
+**Ingress:** Tùy chỉnh `ingress.yaml` bằng miền và TLS của bạn
 
-### Key Configuration
+### Cấu Hình Chính
 
-**Prometheus** uses Kubernetes service discovery:
+**Prometheus** sử dụng khám phá dịch vụ Kubernetes:
 
 ```yaml
 scrape_configs:
@@ -150,7 +150,7 @@ scrape_configs:
           names: [vllm-semantic-router-system]
 ```
 
-**Grafana** credentials (change in production):
+**Grafana** thông tin xác thực (thay đổi trong sản xuất):
 
 ```bash
 kubectl create secret generic grafana-admin \
@@ -161,16 +161,16 @@ kubectl create secret generic grafana-admin \
 
 ---
 
-## 5. Key Metrics
+## 5. Số Liệu Chính
 
-| Metric                                  | Type      | Description              |
+| Số liệu | Loại | Mô tả |
 | --------------------------------------- | --------- | ------------------------ |
-| `llm_category_classifications_count`    | counter   | Category classifications |
-| `llm_model_completion_tokens_total`     | counter   | Tokens per model         |
-| `llm_model_routing_modifications_total` | counter   | Model routing changes    |
-| `llm_model_completion_latency_seconds`  | histogram | Completion latency       |
+| `llm_category_classifications_count` | counter | Phân loại danh mục |
+| `llm_model_completion_tokens_total` | counter | Token trên model |
+| `llm_model_routing_modifications_total` | counter | Thay đổi định tuyến mô hình |
+| `llm_model_completion_latency_seconds` | histogram | Độ trễ hoàn thành |
 
-**Example queries:**
+**Truy vấn mẫu:**
 
 ```promql
 rate(llm_model_completion_tokens_total[5m])
@@ -179,13 +179,13 @@ histogram_quantile(0.95, rate(llm_model_completion_latency_seconds_bucket[5m]))
 
 ---
 
-## 6. Windowed Model Metrics (Load Balancing)
+## 6. Số Liệu Mô Hình Được Cửa Sổ (Cân Bằng Tải)
 
-Enhanced time-windowed metrics for model performance tracking, useful for load balancing decisions in Kubernetes environments where model selection matters more than endpoint selection.
+Số liệu được cải tiến theo cửa sổ thời gian để theo dõi hiệu suất mô hình, hữu ích cho quyết định cân bằng tải trong môi trường Kubernetes.
 
-### Configuration
+### Cấu Hình
 
-Enable windowed metrics in `config.yaml`:
+Kích hoạt số liệu theo cửa sổ trong `config.yaml`:
 
 ```yaml
 observability:
@@ -199,54 +199,54 @@ observability:
       max_models: 100
 ```
 
-### Model-Level Metrics
+### Số Liệu Cấp Mô Hình
 
-| Metric                                      | Type  | Labels                       | Description                           |
+| Số liệu | Loại | Nhãn | Mô tả |
 | ------------------------------------------- | ----- | ---------------------------- | ------------------------------------- |
-| `llm_model_latency_windowed_seconds`        | gauge | model, time_window           | Average latency per time window       |
-| `llm_model_requests_windowed_total`         | gauge | model, time_window           | Request count per time window         |
-| `llm_model_tokens_windowed_total`           | gauge | model, token_type, time_window | Token throughput per window         |
-| `llm_model_utilization_percentage`          | gauge | model, time_window           | Estimated utilization percentage      |
-| `llm_model_queue_depth_estimated`           | gauge | model                        | Current estimated queue depth         |
-| `llm_model_error_rate_windowed`             | gauge | model, time_window           | Error rate per time window            |
-| `llm_model_latency_p50_windowed_seconds`    | gauge | model, time_window           | P50 latency per time window           |
-| `llm_model_latency_p95_windowed_seconds`    | gauge | model, time_window           | P95 latency per time window           |
-| `llm_model_latency_p99_windowed_seconds`    | gauge | model, time_window           | P99 latency per time window           |
+| `llm_model_latency_windowed_seconds` | gauge | model, time_window | Độ trễ trung bình mỗi cửa sổ thời gian |
+| `llm_model_requests_windowed_total` | gauge | model, time_window | Số lượng yêu cầu mỗi cửa sổ thời gian |
+| `llm_model_tokens_windowed_total` | gauge | model, token_type, time_window | Thông lượng token mỗi cửa sổ |
+| `llm_model_utilization_percentage` | gauge | model, time_window | Phần trăm sử dụng ước tính |
+| `llm_model_queue_depth_estimated` | gauge | model | Độ sâu hàng đợi ước tính hiện tại |
+| `llm_model_error_rate_windowed` | gauge | model, time_window | Tỷ lệ lỗi mỗi cửa sổ thời gian |
+| `llm_model_latency_p50_windowed_seconds` | gauge | model, time_window | Độ trễ P50 mỗi cửa sổ thời gian |
+| `llm_model_latency_p95_windowed_seconds` | gauge | model, time_window | Độ trễ P95 mỗi cửa sổ thời gian |
+| `llm_model_latency_p99_windowed_seconds` | gauge | model, time_window | Độ trễ P99 mỗi cửa sổ thời gian |
 
-### Example Queries
+### Truy Vấn Ví Dụ
 
 ```promql
-# Average latency for model in last 5 minutes
+# Độ trễ trung bình cho model trong 5 phút cuối cùng
 llm_model_latency_windowed_seconds{model="gpt-4", time_window="5m"}
 
-# P95 latency comparison across models
+# So sánh độ trễ P95 trên các mô hình
 llm_model_latency_p95_windowed_seconds{time_window="15m"}
 
-# Token throughput per model
+# Thông lượng token trên mỗi model
 llm_model_tokens_windowed_total{token_type="completion", time_window="1h"}
 
-# Current queue depth for load balancing decisions
+# Độ sâu hàng đợi hiện tại cho quyết định cân bằng tải
 llm_model_queue_depth_estimated{model="gpt-4"}
 
-# Error rate monitoring
+# Giám sát tỷ lệ lỗi
 llm_model_error_rate_windowed{time_window="5m"} > 0.05
 ```
 
-### Use Cases
+### Trường Hợp Sử Dụng
 
-1. **Load Balancing**: Use queue depth and latency metrics to route requests to less loaded models
-2. **Performance Monitoring**: Track P95/P99 latency trends across time windows
-3. **Capacity Planning**: Monitor utilization percentages to identify when to scale models
-4. **Alerting**: Set alerts on error rates or latency spikes within specific time windows
+1. **Cân Bằng Tải**: Sử dụng độ sâu hàng đợi và số liệu độ trễ để định tuyến yêu cầu đến các mô hình ít tải hơn
+2. **Giám Sát Hiệu Suất**: Theo dõi xu hướng độ trễ P95/P99 trên các cửa sổ thời gian
+3. **Lập Kế Hoạch Dung Lượng**: Giám sát phần trăm sử dụng để xác định khi nào cần mở rộng quy mô các mô hình
+4. **Cảnh Báo**: Đặt cảnh báo trên tỷ lệ lỗi hoặc độ trễ tăng đột ngột trong các cửa sổ thời gian cụ thể
 
 ---
 
-## 7. Troubleshooting
+## 7. Khắc Phục Sự Cố
 
-| Issue           | Check               | Fix                                                   |
+| Vấn đề | Kiểm Tra | Sửa Chữa |
 | --------------- | ------------------- | ----------------------------------------------------- |
-| Target DOWN     | Prometheus /targets | Verify router is running and exposing `:9190/metrics` |
-| No metrics      | Generate traffic    | Send requests through router                          |
-| Dashboard empty | Grafana datasource  | Check Prometheus URL configuration                    |
+| Mục tiêu XUỐNG | Prometheus /targets | Xác minh router chạy và tiếp xúc `:9190/metrics` |
+| Không có số liệu | Tạo lưu lượng | Gửi yêu cầu thông qua định tuyến |
+| Bảng điều khiển trống | Nguồn dữ liệu Grafana | Kiểm tra cấu hình URL Prometheus |
 
 ---

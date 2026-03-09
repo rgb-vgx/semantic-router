@@ -1,43 +1,43 @@
-# PII Detection
+# Phát hiện PII
 
-Semantic Router provides built-in Personally Identifiable Information (PII) detection to protect sensitive data in user queries. The system uses fine-tuned BERT models to identify and handle various types of PII according to configurable policies.
+Semantic Router cung cấp phát hiện Thông tin Nhận dạng Cá nhân (PII - Personally Identifiable Information) tích hợp để bảo vệ dữ liệu nhạy cảm trong các truy vấn của người dùng. Hệ thống sử dụng các mô hình BERT được tinh chỉnh để xác định và xử lý các loại PII khác nhau theo các chính sách có thể cấu hình.
 
-## Overview
+## Tổng quan
 
-The PII detection system:
+Hệ thống phát hiện PII:
 
-- **Identifies** common PII types in user queries
-- **Enforces** configurable PII policies per decision
-- **Blocks** requests containing sensitive information based on signal rules
-- **Integrates** with signal-driven decisions for fine-grained control
-- **Logs** policy violations for monitoring
+- **Xác định** các loại PII phổ biến trong các truy vấn của người dùng
+- **Thực thi** các chính sách PII có thể cấu hình cho mỗi quyết định
+- **Chặn** các yêu cầu chứa thông tin nhạy cảm dựa trên các quy tắc tín hiệu
+- **Tích hợp** với các quyết định dựa trên tín hiệu để kiểm soát chi tiết
+- **Ghi nhật ký** các vi phạm chính sách để giám sát
 
-## Supported PII Types
+## Các loại PII được hỗ trợ
 
-The system can detect the following PII types:
+Hệ thống có thể phát hiện các loại PII sau:
 
-| PII Type | Description | Examples |
-|----------|-------------|----------|
-| `PERSON` | Person names | "John Smith", "Mary Johnson" |
-| `EMAIL_ADDRESS` | Email addresses | "user@example.com" |
-| `PHONE_NUMBER` | Phone numbers | "+1-555-123-4567", "(555) 123-4567" |
-| `US_SSN` | US Social Security Numbers | "123-45-6789" |
-| `STREET_ADDRESS` | Physical addresses | "123 Main St, New York, NY" |
-| `GPE` | Geopolitical entities | Countries, states, cities |
-| `ORGANIZATION` | Organization names | "Microsoft", "OpenAI" |
-| `CREDIT_CARD` | Credit card numbers | "4111-1111-1111-1111" |
-| `US_DRIVER_LICENSE` | US Driver's License | "D123456789" |
-| `IBAN_CODE` | International Bank Account Number | "GB82 WEST 1234 5698 7654 32" |
-| `IP_ADDRESS` | IP addresses | "192.168.1.1", "2001:db8::1" |
-| `DOMAIN_NAME` | Domain/website names | "example.com", "google.com" |
-| `DATE_TIME` | Date/time information | "2024-01-15", "January 15th" |
-| `AGE` | Age information | "25 years old", "born in 1990" |
-| `NRP` | Nationality/Religious/Political groups | "American", "Christian", "Democrat" |
-| `ZIP_CODE` | ZIP/postal codes | "10001", "SW1A 1AA" |
+| Loại PII | Mô tả | Ví dụ |
+|----------|-------|--------|
+| `PERSON` | Tên của người | "John Smith", "Mary Johnson" |
+| `EMAIL_ADDRESS` | Địa chỉ email | "user@example.com" |
+| `PHONE_NUMBER` | Số điện thoại | "+1-555-123-4567", "(555) 123-4567" |
+| `US_SSN` | Số An sinh Xã hội Hoa Kỳ | "123-45-6789" |
+| `STREET_ADDRESS` | Địa chỉ vật lý | "123 Main St, New York, NY" |
+| `GPE` | Các đơn vị địa chính trị | Các quốc gia, tiểu bang, thành phố |
+| `ORGANIZATION` | Tên tổ chức | "Microsoft", "OpenAI" |
+| `CREDIT_CARD` | Số thẻ tín dụng | "4111-1111-1111-1111" |
+| `US_DRIVER_LICENSE` | Bằng lái xe Hoa Kỳ | "D123456789" |
+| `IBAN_CODE` | Mã số tài khoản ngân hàng quốc tế | "GB82 WEST 1234 5698 7654 32" |
+| `IP_ADDRESS` | Địa chỉ IP | "192.168.1.1", "2001:db8::1" |
+| `DOMAIN_NAME` | Tên miền/trang web | "example.com", "google.com" |
+| `DATE_TIME` | Thông tin ngày/giờ | "2024-01-15", "January 15th" |
+| `AGE` | Thông tin tuổi | "25 years old", "born in 1990" |
+| `NRP` | Nhóm quốc tịch/Tôn giáo/Chính trị | "American", "Christian", "Democrat" |
+| `ZIP_CODE` | Mã ZIP/bưu chính | "10001", "SW1A 1AA" |
 
-## Configuration
+## Cấu hình
 
-PII detection is now a **first-class signal** in the signal layer. You define named `pii` rules under `signals.pii`, then reference them in `decisions` using `type: "pii"`.
+Phát hiện PII hiện là một **tín hiệu hạng nhất** trong lớp tín hiệu. Bạn xác định các quy tắc `pii` được đặt tên dưới `signals.pii`, sau đó tham chiếu chúng trong `decisions` bằng cách sử dụng `type: "pii"`.
 
 ### Basic PII Detection
 

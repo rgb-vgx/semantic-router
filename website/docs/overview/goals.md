@@ -2,98 +2,98 @@
 sidebar_position: 1
 ---
 
-# What are our Goals?
+# Các mục tiêu của chúng tôi là gì?
 
-We are building the **System Level Intelligence** for Mixture-of-Models (MoM), bringing **Collective Intelligence** into **LLM systems**.
+Chúng tôi đang xây dựng **System Level Intelligence** cho Mixture-of-Models (MoM), mang **Collective Intelligence** vào **các hệ thống LLM**.
 
-## Core Questions
+## Các câu hỏi cốt lõi
 
-Our project addresses five fundamental challenges in LLM systems:
+Dự án của chúng tôi giải quyết năm thách thức cơ bản trong các hệ thống LLM:
 
-### 1. How to capture the missing signals?
+### 1. Làm cách nào để nắm bắt các tín hiệu bị thiếu?
 
-In traditional LLM routing, we only look at the user's query text. But there's so much more information we're missing:
+Trong định tuyến LLM truyền thống, chúng tôi chỉ xem xét văn bản truy vấn của người dùng. Nhưng có rất nhiều thông tin mà chúng tôi đang bỏ qua:
 
-- **Context signals**: What domain is this query about? (math, code, creative writing?)
-- **Quality signals**: Does this query need fact-checking? Is the user giving feedback?
-- **User signals**: What are the user's preferences? What's their satisfaction level?
+- **Context signals**: Miền này liên quan đến những gì? (toán học, mã, viết sáng tạo?)
+- **Quality signals**: Truy vấn này có cần kiểm tra thực tế không? Người dùng có đưa ra phản hồi không?
+- **User signals**: Các ưu tiên của người dùng là gì? Mức độ hài lòng của họ là gì?
 
-**Our solution**: A comprehensive signal extraction system that captures 9 types of request signals from requests, responses, and context.
+**Giải pháp của chúng tôi**: Một hệ thống trích xuất tín hiệu toàn diện nắm bắt 9 loại tín hiệu yêu cầu từ các yêu cầu, phản hồi và bảng ngữ cảnh.
 
-### 2. How to combine the signals?
+### 2. Làm cách nào để kết hợp các tín hiệu?
 
-Having multiple signals is great, but how do we use them together to make better decisions?
+Có nhiều tín hiệu thật tuyệt vời, nhưng chúng ta sử dụng chúng như thế nào cùng nhau để đưa ra quyết định tốt hơn?
 
-- Should we route to the math model if we detect **both** math keywords **and** math domain?
-- Should we enable fact-checking if we detect **either** a factual question **or** a sensitive domain?
+- Chúng ta nên định tuyến tới mô hình toán học nếu chúng tôi phát hiện **cả** từ khóa toán học **và** miền toán học không?
+- Chúng ta nên bật kiểm tra thực tế nếu chúng tôi phát hiện **trong m hoặc** một câu hỏi thực tế **hoặc** một miền nhạy cảm không?
 
-**Our solution**: A flexible decision engine with AND/OR operators that lets you combine signals in powerful ways.
+**Giải pháp của chúng tôi**: Một công cụ quyết định linh hoạt với các toán tử AND/OR cho phép bạn kết hợp tín hiệu theo những cách mạnh mẽ.
 
-### 3. How to collaborate more efficiently?
+### 3. Làm cách nào để cộng tác hiệu quả hơn?
 
-Different models are good at different things. How do we make them work together as a team?
+Các mô hình khác nhau tốt ở những điều khác nhau. Làm cách nào chúng tôi có thể làm cho chúng làm việc cùng nhau như một nhóm?
 
-- Route math questions to specialized math models
-- Route creative writing to models with better creativity
-- Route code questions to models trained on code
-- Use smaller models for simple tasks, larger models for complex ones
+- Định tuyến các câu hỏi toán học tới các mô hình chuyên biệt về toán
+- Định tuyến viết sáng tạo tới các mô hình có sự sáng tạo tốt hơn
+- Định tuyến các câu hỏi mã tới các mô hình được huấn luyện trên mã
+- Sử dụng các mô hình nhỏ hơn cho các tác vụ đơn giản, các mô hình lớn hơn cho các tác vụ phức tạp
 
-**Our solution**: Intelligent routing that matches queries to the best model based on multiple signals, not just simple rules.
+**Giải pháp của chúng tôi**: Định tuyến thông minh phù hợp với truy vấn tới mô hình tốt nhất dựa trên nhiều tín hiệu, không chỉ là các quy tắc đơn giản.
 
-### 4. How to secure the system?
+### 4. Làm cách nào để bảo mật hệ thống?
 
-LLM systems face unique security challenges:
+Các hệ thống LLM phải đối mặt với thách thức bảo mật duy nhất:
 
-- **Jailbreak attacks**: Adversarial prompts trying to bypass safety guardrails
-- **PII leaks**: Accidentally exposing sensitive personal information
-- **Hallucinations**: Models generating false or misleading information
+- **Jailbreak attacks**: Các lời nhắc đối nghịch cố gắng vượt qua các lá chắn bảo vệ
+- **PII leaks**: Vô tình tiếp lộ thông tin cá nhân nhạy cảm
+- **Hallucinations**: Các mô hình tạo ra thông tin sai lệch hoặc gây hiểu nhầm
 
-**Our solution**: A plugin chain architecture with multiple security layers (jailbreak detection, PII filtering, hallucination detection).
+**Giải pháp của chúng tôi**: Kiến trúc chuỗi plugin với nhiều lớp bảo mật (phát hiện jailbreak, lọc PII, phát hiện ảo tưởng).
 
-### 5. How to collect valuable signals?
+### 5. Làm cách nào để thu thập các tín hiệu có giá trị?
 
-The system should learn and improve over time:
+Hệ thống nên học và cải thiện theo thời gian:
 
-- Track which signals lead to better routing decisions
-- Collect user feedback to improve signal detection
-- Build a self-learning system that gets smarter with use
+- Theo dõi những tín hiệu nào dẫn đến quyết định định tuyến tốt hơn
+- Thu thập phản hồi người dùng để cải thiện phát hiện tín hiệu
+- Xây dựng một hệ thống tự học trở nên thông minh hơn khi sử dụng
 
-**Our solution**: Comprehensive observability and feedback collection that feeds back into the signal extraction and decision engine.
+**Giải pháp của chúng tôi**: Quan sát toàn diện và thu thập phản hồi mà phản hồi lại vào hệ thống trích xuất tín hiệu và công cụ quyết định.
 
-## The Vision
+## Tầm nhìn
 
-We envision a future where:
+Chúng tôi hình dung một tương lai trong đó:
 
-- **LLM systems are intelligent at the system level**, not just at the model level
-- **Multiple models collaborate seamlessly**, each contributing their strengths
-- **Security is built-in**, not bolted on
-- **Systems learn and improve** from every interaction
-- **Collective intelligence emerges** from the combination of signals, decisions, and feedback
+- **Các hệ thống LLM thông minh ở cấp độ hệ thống**, không chỉ ở cấp độ mô hình
+- **Nhiều mô hình cộng tác liền mạch**, mỗi mô hình góp phần vào những điểm mạnh của chúng
+- **Bảo mật được tích hợp sẵn**, không phải áp đặt
+- **Hệ thống học và cải thiện** từ mỗi tương tác
+- **Trí thông minh tập thể xuất hiện** từ sự kết hợp của tín hiệu, quyết định và phản hồi
 
-## Why This Matters
+## Tại sao điều này quan trọng
 
-### For Developers
+### Dành cho các nhà phát triển
 
-- Build more capable LLM applications with less effort
-- Leverage multiple models without complex orchestration
-- Get built-in security and compliance
+- Xây dựng các ứng dụng LLM có khả năng cao hơn với ít nỗ lực
+- Tận dụng nhiều mô hình mà không cần sắp xếp phức tạp
+- Nhận được bảo mật và tuân thủ tích hợp sẵn
 
-### For Organizations
+### Cho các tổ chức
 
-- Reduce costs by routing to appropriate models
-- Improve quality through specialized model selection
-- Meet compliance requirements with built-in PII and security controls
+- Giảm chi phí bằng cách định tuyến tới các mô hình thích hợp
+- Cải thiện chất lượng thông qua lựa chọn mô hình chuyên biệt
+- Đáp ứng các yêu cầu tuân thủ với các điều khiển PII và bảo mật tích hợp sẵn
 
-### For Users
+### Cho người dùng
 
-- Get better, more accurate responses
-- Experience faster response times through caching
-- Benefit from improved safety and privacy
+- Nhận được các phản hồi tốt hơn, chính xác hơn
+- Trải nghiệm các thời gian phản hồi nhanh hơn thông qua bộ nhớ đệm
+- Hưởng lợi từ cải thiện an toàn và quyền riêng tư
 
-## Next Steps
+## Bước tiếp theo
 
-Learn more about the core concepts:
+Tìm hiểu thêm về các khái niệm cốt lõi:
 
-- [What is Semantic Router?](semantic-router-overview.md) - Understanding semantic routing
-- [What is Collective Intelligence?](collective-intelligence.md) - How signals create intelligence
-- [What is Signal-Driven Decision?](signal-driven-decisions.md) - Deep dive into the decision engine
+- [Semantic Router là gì?](semantic-router-overview.md) - Hiểu định tuyến ngữ nghĩa
+- [Collective Intelligence là gì?](collective-intelligence.md) - Cách các tín hiệu tạo ra trí thông minh
+- [Signal-Driven Decision là gì?](signal-driven-decisions.md) - Tìm hiểu sâu về công cụ quyết định

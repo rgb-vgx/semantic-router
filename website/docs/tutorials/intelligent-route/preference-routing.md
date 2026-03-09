@@ -1,34 +1,34 @@
-# Preference Signal Routing
+# Định tuyến Tín hiệu Ưu tiên
 
-This guide shows you how to route requests using LLM-based preference matching. The preference signal uses an external LLM to analyze complex intent and make nuanced routing decisions.
+Hướng dẫn này hướng dẫn bạn cách định tuyến các yêu cầu bằng cách sử dụng khớp ưu tiên dựa trên LLM. Tín hiệu ưu tiên sử dụng một LLM bên ngoài để phân tích ý định phức tạp và đưa ra các quyết định định tuyến tinh tế.
 
-## Key Advantages
+## Lợi ích chính
 
-- **Complex Intent Analysis**: Use LLM reasoning for nuanced routing decisions
-- **Flexible Logic**: Define routing preferences in natural language
-- **High Accuracy**: 90-98% accuracy for complex intent detection
-- **Extensible**: Add new preferences without retraining models
+- **Phân tích Ý định Phức tạp**: Sử dụng suy luận LLM cho các quyết định định tuyến tinh tế
+- **Logic Linh hoạt**: Xác định ưu tiên định tuyến bằng ngôn ngữ tự nhiên
+- **Độ chính xác Cao**: Phát hiện ý định phức tạp với độ chính xác 90-98%
+- **Có thể mở rộng**: Thêm các ưu tiên mới mà không cần huấn luyện lại mô hình
 
-## What Problem Does It Solve?
+## Vấn đề nó giải quyết là gì?
 
-Some routing decisions are too complex for simple pattern matching or classification:
+Một số quyết định định tuyến quá phức tạp đối với việc khớp mẫu hoặc phân loại đơn giản:
 
-- **Nuanced Intent**: "Explain the philosophical implications of quantum mechanics"
-- **Multi-faceted Queries**: "Compare and contrast utilitarianism and deontology"
-- **Context-dependent**: "What's the best approach for this problem?"
+- **Ý định Tinh tế**: "Giải thích những hàm ý triết học của cơ học lượng tử"
+- **Truy vấn Đa khía cạnh**: "So sánh và đối chiếu chủ nghĩa lợi ích và lý thuyết bổn phận"
+- **Phụ thuộc Ngữ cảnh**: "Cách tiếp cận tốt nhất cho vấn đề này là gì?"
 
-The preference signal uses an external LLM to analyze these complex queries and match them to routing preferences, allowing you to:
+Tín hiệu ưu tiên sử dụng một LLM bên ngoài để phân tích các truy vấn phức tạp này và khớp chúng với các ưu tiên định tuyến, cho phép bạn:
 
-1. Handle complex intent that other signals miss
-2. Make nuanced routing decisions based on LLM reasoning
-3. Define routing logic in natural language
-4. Adapt to new use cases without retraining
+1. Xử lý ý định phức tạp mà các tín hiệu khác bỏ lỡ
+2. Đưa ra các quyết định định tuyến tinh tế dựa trên suy luận LLM
+3. Xác định logic định tuyến bằng ngôn ngữ tự nhiên
+4. Thích ứng với các trường hợp sử dụng mới mà không cần huấn luyện lại
 
-## Configuration
+## Cấu hình
 
-### Basic Configuration
+### Cấu hình cơ bản
 
-Define preference signals in your `config.yaml`:
+Xác định các tín hiệu ưu tiên trong `config.yaml` của bạn:
 
 ```yaml
 signals:
@@ -46,9 +46,9 @@ signals:
       description: "Irrelevant queries or already fulfilled requests"
 ```
 
-### External LLM Configuration
+### Cấu hình LLM Bên ngoài
 
-Configure external LLM for preference matching in `router-defaults.yaml`:
+Cấu hình LLM bên ngoài cho khớp ưu tiên trong `router-defaults.yaml`:
 
 ```yaml
 # External models configuration
@@ -65,7 +65,7 @@ external_models:
     access_key: ""  # Optional: for Authorization header (Bearer token)
 ```
 
-### Use in Decision Rules
+### Sử dụng trong các Quy tắc Quyết định
 
 ```yaml
 decisions:
@@ -102,25 +102,25 @@ decisions:
           system_prompt: "You are an expert debugger. Analyze the issue carefully, identify the root cause, and provide a clear fix with explanation."
 ```
 
-## How It Works
+## Cách nó hoạt động
 
-### 1. Query Analysis
+### 1. Phân tích Truy vấn
 
-The external LLM analyzes the query:
+LLM bên ngoài phân tích truy vấn:
 
 ```
-Query: "Explain the philosophical implications of quantum mechanics"
+Truy vấn: "Giải thích những hàm ý triết học của cơ học lượng tử"
 
-LLM Analysis:
-- Requires deep reasoning: YES
-- Complexity level: HIGH
-- Domain: Philosophy + Physics
-- Reasoning type: Analytical, conceptual
+Phân tích LLM:
+- Yêu cầu suy luận sâu: CÓ
+- Mức độ phức tạp: CAO
+- Miền: Triết học + Vật lý
+- Loại suy luận: Phân tích, khái niệm
 ```
 
-### 2. Preference Matching
+### 2. Khớp Ưu tiên
 
-The LLM matches the query to defined preferences:
+LLM khớp truy vấn với các ưu tiên được xác định:
 
 ```yaml
 preferences:
@@ -130,21 +130,21 @@ preferences:
     # Result: YES (confidence: 0.95)
 ```
 
-### 3. Routing Decision
+### 3. Quyết định Định tuyến
 
-Based on the match, the query is routed:
+Dựa trên kết quả khớp, truy vấn được định tuyến:
 
 ```
-Preference matched: complex_reasoning (0.95)
-Decision: deep_reasoning
-Model: reasoning-specialist
+Ưu tiên khớp: complex_reasoning (0.95)
+Quyết định: deep_reasoning
+Mô hình: reasoning-specialist
 ```
 
-## Use Cases
+## Các trường hợp sử dụng
 
-### 1. Academic Research - Complex Analysis
+### 1. Nghiên cứu Học thuật - Phân tích Phức tạp
 
-**Problem**: Research queries require deep reasoning and analysis
+**Vấn đề**: Các truy vấn nghiên cứu cần suy luận sâu và phân tích
 
 ```yaml
 signals:
@@ -177,14 +177,14 @@ decisions:
           system_prompt: "You are an academic research specialist with expertise in critical analysis and philosophical reasoning."
 ```
 
-**Example Queries**:
+**Truy vấn ví dụ**:
 
-- "Analyze the epistemological implications of Kant's Critique" → ✅ Complex analysis
-- "What is philosophy?" → ❌ Simple definition
+- "Phân tích các hàm ý nhận thức của Phê phán Kant" → ✅ Phân tích phức tạp
+- "Triết học là gì?" → ❌ Định nghĩa đơn giản
 
-### 2. Business Strategy - Decision Making
+### 2. Chiến lược Kinh doanh - Quyết định
 
-**Problem**: Strategic queries need nuanced analysis
+**Vấn đề**: Các truy vấn chiến lược cần phân tích tinh tế
 
 ```yaml
 signals:
@@ -218,14 +218,14 @@ decisions:
           system_prompt: "You are a senior business strategist with expertise in market analysis and competitive strategy."
 ```
 
-**Example Queries**:
+**Truy vấn ví dụ**:
 
-- "Analyze our competitive position and recommend growth strategies" → ✅ Strategic
-- "What is our revenue?" → ❌ Simple query
+- "Phân tích vị trí cạnh tranh của chúng tôi và đề xuất các chiến lược tăng trưởng" → ✅ Chiến lược
+- "Doanh thu của chúng tôi là bao nhiêu?" → ❌ Truy vấn đơn giản
 
-### 3. Technical Architecture - Design Decisions
+### 3. Kiến trúc Kỹ thuật - Quyết định Thiết kế
 
-**Problem**: Architecture decisions require deep technical reasoning
+**Vấn đề**: Các quyết định kiến trúc yêu cầu suy luận kỹ thuật sâu
 
 ```yaml
 signals:
@@ -259,25 +259,25 @@ decisions:
           system_prompt: "You are a technical architecture specialist with expertise in system design, scalability, and performance optimization."
 ```
 
-**Example Queries**:
+**Truy vấn ví dụ**:
 
-- "Design a scalable microservices architecture with trade-offs" → ✅ Design thinking
-- "What is microservices?" → ❌ Simple definition
+- "Thiết kế một kiến trúc vi dịch vụ có thể mở rộng với những ưu nhược điểm" → ✅ Thiết kế
+- "Dịch vụ vi mô là gì?" → ❌ Định nghĩa đơn giản
 
-## Performance Characteristics
+## Đặc điểm Hiệu suất
 
-| Aspect | Value |
+| Khía cạnh | Giá trị |
 |--------|-------|
-| Latency | 100-500ms (depends on LLM) |
-| Accuracy | 90-98% |
-| Cost | Higher (external LLM call) |
-| Scalability | Limited by LLM endpoint |
+| Độ trễ | 100-500ms (phụ thuộc vào LLM) |
+| Độ chính xác | 90-98% |
+| Chi phí | Cao hơn (lệnh gọi LLM bên ngoài) |
+| Khả năng mở rộng | Bị giới hạn bởi điểm cuối LLM |
 
-## Best Practices
+## Các thực hành tốt nhất
 
-### 1. Use as Last Resort
+### 1. Sử dụng Làm Phương sách Cuối cùng
 
-Preference signals are expensive. Use other signals first:
+Tín hiệu ưu tiên tốn kém. Sử dụng các tín hiệu khác trước:
 
 ```yaml
 decisions:
@@ -288,7 +288,7 @@ decisions:
       conditions:
         - type: "keyword"
           name: "math_keywords"  # Fast, cheap
-    
+
   - name: complex_reasoning
     priority: 5
     rules:
@@ -298,9 +298,9 @@ decisions:
           name: "complex_reasoning"  # Slow, expensive
 ```
 
-### 2. Combine with Other Signals
+### 2. Kết hợp với Các Tín hiệu Khác
 
-Use AND operator to reduce false positives:
+Sử dụng toán tử AND để giảm dương tính giả:
 
 ```yaml
 rules:
@@ -312,9 +312,9 @@ rules:
       name: "complex_reasoning"  # Expensive verification
 ```
 
-### 3. Cache LLM Responses
+### 3. Bộ nhớ đệm Phản hồi LLM
 
-Enable caching to reduce latency and cost:
+Bật bộ nhớ đệm để giảm độ trễ và chi phí:
 
 ```yaml
 preferences:
@@ -325,9 +325,9 @@ preferences:
     cache_ttl: 3600  # 1 hour
 ```
 
-### 4. Set Appropriate Timeouts
+### 4. Đặt Timeout Thích hợp
 
-Prevent slow LLM calls from blocking:
+Ngăn các lệnh gọi LLM chậm từ chặn:
 
 ```yaml
 preferences:
@@ -338,9 +338,9 @@ preferences:
     fallback_on_timeout: false  # Don't match if timeout
 ```
 
-### 5. Monitor Performance
+### 5. Giám sát Hiệu suất
 
-Track LLM call latency and accuracy:
+Theo dõi độ trễ lệnh gọi LLM và độ chính xác:
 
 ```yaml
 logging:
@@ -349,11 +349,11 @@ logging:
   llm_latency: true
 ```
 
-## Advanced Configuration
+## Cấu hình Nâng cao
 
-### Multiple LLM Endpoints
+### Nhiều Điểm cuối LLM
 
-Use different LLMs for different preferences:
+Sử dụng các LLM khác nhau cho các ưu tiên khác nhau:
 
 ```yaml
 signals:
@@ -362,16 +362,16 @@ signals:
       description: "Deep reasoning"
       llm_endpoint: "http://localhost:11434"
       model: "llama3-70b"  # Large model for complex reasoning
-    
+
     - name: "simple_classification"
       description: "Simple intent classification"
       llm_endpoint: "http://localhost:11435"
       model: "llama3-8b"  # Small model for simple tasks
 ```
 
-### Custom Prompts
+### Dấu nhắc Tùy chỉnh
 
-Customize the LLM prompt for better accuracy:
+Tùy chỉnh dấu nhắc LLM để có độ chính xác tốt hơn:
 
 ```yaml
 preferences:
@@ -384,6 +384,6 @@ preferences:
       Answer with YES or NO and explain why.
 ```
 
-## Reference
+## Tham chiếu
 
-See [Signal-Driven Decision Architecture](../../overview/signal-driven-decisions.md) for complete signal architecture.
+Xem [Signal-Driven Decision Architecture](../../overview/signal-driven-decisions.md) để biết kiến trúc tín hiệu hoàn chỉnh.

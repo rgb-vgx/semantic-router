@@ -1,42 +1,42 @@
-# MCP Based Routing
+# Định tuyến Dựa trên MCP
 
-This guide shows you how to implement custom classification logic using the Model Context Protocol (MCP). MCP routing lets you integrate external services, LLMs, or custom business logic for classification decisions while keeping your data private and your routing logic extensible.
+Hướng dẫn này hướng dẫn bạn cách triển khai logic phân loại tùy chỉnh bằng Model Context Protocol (MCP). Định tuyến MCP cho phép bạn tích hợp các dịch vụ bên ngoài, LLM hoặc logic kinh doanh tùy chỉnh cho các quyết định phân loại trong khi giữ dữ liệu của bạn riêng tư và logic định tuyến có thể mở rộng.
 
-## Key Advantages
+## Lợi ích chính
 
-- **Baseline/High Accuracy**: Use powerful LLMs (GPT-4, Claude) for classification with in-context learning
-- **Extensible**: Easily integrate custom classification logic without modifying router code
-- **Private**: Keep classification logic and data in your own infrastructure
-- **Flexible**: Combine LLM reasoning with business rules, user context, and external data
+- **Độ chính xác cơ sở/cao**: Sử dụng LLM mạnh mẽ (GPT-4, Claude) cho phân loại với học tập trong ngữ cảnh
+- **Có thể mở rộng**: Dễ dàng tích hợp logic phân loại tùy chỉnh mà không cần sửa đổi mã router
+- **Riêng tư**: Giữ logic phân loại và dữ liệu trong cơ sở hạ tầng của riêng bạn
+- **Linh hoạt**: Kết hợp suy luận LLM với các quy tắc kinh doanh, ngữ cảnh người dùng và dữ liệu bên ngoài
 
-## What Problem Does It Solve?
+## Vấn đề nó giải quyết là gì?
 
-Built-in classifiers are limited to predefined models and logic. MCP routing enables:
+Các bộ phân loại tích hợp bị giới hạn trong các mô hình và logic được xác định trước. Định tuyến MCP cho phép:
 
-- **LLM-powered classification**: Use GPT-4/Claude for complex, nuanced categorization
-- **In-context learning**: Provide examples and context to improve classification accuracy
-- **Custom business logic**: Implement routing rules based on user tier, time, location, history
-- **External data integration**: Query databases, APIs, feature flags during classification
-- **Rapid experimentation**: Update classification logic without redeploying router
+- **Phân loại do LLM sử dụng**: Sử dụng GPT-4/Claude cho phân loại phức tạp, tinh tế
+- **Học tập trong ngữ cảnh**: Cung cấp các ví dụ và ngữ cảnh để cải thiện độ chính xác phân loại
+- **Logic kinh doanh tùy chỉnh**: Triển khai các quy tắc định tuyến dựa trên cấp độ người dùng, thời gian, vị trí, lịch sử
+- **Tích hợp dữ liệu bên ngoài**: Truy vấn cơ sở dữ liệu, API, cờ tính năng trong quá trình phân loại
+- **Thử nghiệm nhanh chóng**: Cập nhật logic phân loại mà không cần triển khai lại router
 
-## When to Use
+## Khi nào sử dụng
 
-- **High-accuracy requirements** where LLM-based classification outperforms BERT/embeddings
-- **Complex domains** needing nuanced understanding beyond keyword/embedding matching
-- **Custom business rules** (user tiers, A/B tests, time-based routing)
-- **Private/sensitive data** where classification must stay in your infrastructure
-- **Rapid iteration** on classification logic without code changes
+- **Yêu cầu độ chính xác cao** nơi phân loại do LLM sử dụng vượt trội hơn BERT/embeddings
+- **Các miền phức tạp** cần sự hiểu biết tinh tế vượt quá khớp từ khóa/nhúng
+- **Quy tắc kinh doanh tùy chỉnh** (cấp độ người dùng, A/B kiểm tra, định tuyến dựa trên thời gian)
+- **Dữ liệu riêng tư/nhạy cảm** nơi phân loại phải ở trong cơ sở hạ tầng của bạn
+- **Lặp lại nhanh chóng** trên logic phân loại mà không thay đổi code
 
-## Configuration
+## Cấu hình
 
-Configure MCP classifier in your `config.yaml`:
+Cấu hình bộ phân loại MCP trong `config.yaml` của bạn:
 
 ```yaml
 classifier:
   # Disable in-tree classifier
   category_model:
     model_id: ""
-  
+
   # Enable MCP classifier
   mcp_category_model:
     enabled: true
@@ -62,14 +62,14 @@ model_config:
     preferred_endpoints: [endpoint1]
 ```
 
-## How It Works
+## Cách nó hoạt động
 
-1. **Startup**: Router connects to MCP server and calls `list_categories` tool
-2. **Category Loading**: MCP returns categories, system prompts, and descriptions
-3. **Classification**: For each request, router calls `classify_text` tool
-4. **Routing**: MCP response includes category, model, and reasoning settings
+1. **Khởi động**: Router kết nối với máy chủ MCP và gọi công cụ `list_categories`
+2. **Tải Danh mục**: MCP trả về danh mục, lời nhắc hệ thống và mô tả
+3. **Phân loại**: Đối với mỗi yêu cầu, router gọi công cụ `classify_text`
+4. **Định tuyến**: Phản hồi MCP bao gồm danh mục, mô hình và cài đặt suy luận
 
-### MCP Response Format
+### Định dạng Phản hồi MCP
 
 **list_categories**:
 
@@ -98,7 +98,7 @@ model_config:
 }
 ```
 
-## Example MCP Server
+## Ví dụ Máy chủ MCP
 
 ```python
 from fastapi import FastAPI
@@ -138,7 +138,7 @@ def classify_text(request: ClassifyRequest):
     }
 ```
 
-## Example Requests
+## Ví dụ Yêu cầu
 
 ```bash
 # Math query (MCP decides routing)
@@ -150,55 +150,55 @@ curl -X POST http://localhost:8801/v1/chat/completions \
   }'
 ```
 
-## Benefits
+## Lợi ích
 
-- **Custom Logic**: Implement domain-specific classification rules
-- **Dynamic Routing**: MCP decides model and reasoning per query
-- **Centralized Control**: Manage routing logic in external service
-- **Scalability**: Scale classification independently from router
-- **Integration**: Connect to existing ML infrastructure
+- **Logic tùy chỉnh**: Triển khai các quy tắc phân loại cụ thể cho miền
+- **Định tuyến Động**: MCP quyết định mô hình và suy luận cho mỗi truy vấn
+- **Kiểm soát Tập trung**: Quản lý logic định tuyến trong dịch vụ bên ngoài
+- **Khả năng mở rộng**: Phân loại quy mô độc lập với router
+- **Tích hợp**: Kết nối với cơ sở hạ tầng ML hiện tại
 
-## Real-World Use Cases
+## Các trường hợp sử dụng thực tế
 
-### 1. Complex Domain Classification (High Accuracy)
+### 1. Phân loại Miền Phức tạp (Độ chính xác cao)
 
-**Problem**: Nuanced legal/medical queries need better accuracy than BERT/embeddings
-**Solution**: MCP uses GPT-4 with in-context examples for classification
-**Impact**: 98% accuracy vs 85% with BERT, baseline for quality comparison
+**Vấn đề**: Các truy vấn pháp lý/y tế tinh tế cần độ chính xác tốt hơn BERT/nhúng
+**Giải pháp**: MCP sử dụng GPT-4 với các ví dụ trong ngữ cảnh cho phân loại
+**Tác động**: Độ chính xác 98% so với 85% với BERT, đường cơ sở để so sánh chất lượng
 
-### 2. Proprietary Classification Logic (Private)
+### 2. Logic Phân loại Độc quyền (Riêng tư)
 
-**Problem**: Classification logic contains trade secrets, can't use external services
-**Solution**: MCP server runs in private VPC, keeps all logic and data internal
-**Impact**: Full data privacy, no external API calls
+**Vấn đề**: Logic phân loại chứa bí mật thương mại, không thể sử dụng dịch vụ bên ngoài
+**Giải pháp**: Máy chủ MCP chạy trong VPC riêng, giữ tất cả logic và dữ liệu nội bộ
+**Tác động**: Quyền riêng tư dữ liệu đầy đủ, không có lệnh gọi API bên ngoài
 
-### 3. Custom Business Rules (Extensible)
+### 3. Quy tắc Kinh doanh Tùy chỉnh (Có thể mở rộng)
 
-**Problem**: Need to route based on user tier, location, time, A/B tests
-**Solution**: MCP combines LLM classification with database queries and business logic
-**Impact**: Flexible routing without modifying router code
+**Vấn đề**: Cần định tuyến dựa trên cấp độ người dùng, vị trí, thời gian, A/B test
+**Giải pháp**: MCP kết hợp phân loại LLM với các truy vấn cơ sở dữ liệu và logic kinh doanh
+**Tác động**: Định tuyến linh hoạt mà không cần sửa đổi mã router
 
-### 4. Rapid Experimentation (Extensible)
+### 4. Thử nghiệm Nhanh chóng (Có thể mở rộng)
 
-**Problem**: Data science team needs to test new classification approaches daily
-**Solution**: MCP server updated independently, router unchanged
-**Impact**: Deploy new classification logic in minutes vs days
+**Vấn đề**: Nhóm khoa học dữ liệu cần kiểm tra các cách tiếp cận phân loại mới hàng ngày
+**Giải pháp**: Máy chủ MCP được cập nhật độc lập, router không thay đổi
+**Tác động**: Triển khai logic phân loại mới trong vài phút so với ngày
 
-### 5. Multi-Tenant Platform (Extensible + Private)
+### 5. Nền tảng Đa người thuê (Có thể mở rộng + Riêng tư)
 
-**Problem**: Each customer needs custom classification, data must stay isolated
-**Solution**: MCP loads tenant-specific models/rules, enforces data isolation
-**Impact**: 1000+ tenants with custom logic, full data privacy
+**Vấn đề**: Mỗi khách hàng cần phân loại tùy chỉnh, dữ liệu phải cách ly
+**Giải pháp**: MCP tải các mô hình/quy tắc cụ thể cho người thuê, thực thi cách li dữ liệu
+**Tác động**: 1000+ người thuê với logic tùy chỉnh, quyền riêng tư dữ liệu đầy đủ
 
-### 6. Hybrid Approach (High Accuracy + Extensible)
+### 6. Cách tiếp cận Lai (Độ chính xác cao + Có thể mở rộng)
 
-**Problem**: Need LLM accuracy for edge cases, fast routing for common queries
-**Solution**: MCP uses cached responses for common patterns, LLM for novel queries
-**Impact**: 95% cache hit rate, LLM accuracy on long tail
+**Vấn đề**: Cần độ chính xác LLM cho trường hợp cạnh, định tuyến nhanh cho truy vấn thông thường
+**Giải pháp**: MCP sử dụng phản hồi được lưu trong bộ nhớ cho các mẫu thông thường, LLM cho truy vấn mới
+**Tác động**: Tỷ lệ hit bộ nhớ 95%, độ chính xác LLM trên đuôi dài
 
-## Advanced MCP Server Examples
+## Ví dụ Máy chủ MCP Nâng cao
 
-### Context-Aware Classification
+### Phân loại Nhận thức Ngữ cảnh
 
 ```python
 @app.post("/mcp/classify_text")
@@ -224,7 +224,7 @@ def classify_text(request: ClassifyRequest, user_id: str = Header(None)):
     }
 ```
 
-### Time-Based Routing
+### Định tuyến Dựa trên Thời gian
 
 ```python
 @app.post("/mcp/classify_text")
@@ -249,7 +249,7 @@ def classify_text(request: ClassifyRequest):
     }
 ```
 
-### Risk-Based Routing
+### Định tuyến Dựa trên Rủi ro
 
 ```python
 @app.post("/mcp/classify_text")
@@ -270,27 +270,27 @@ def classify_text(request: ClassifyRequest):
     return standard_classification(request.text)
 ```
 
-## Benefits vs Built-in Classifiers
+## Lợi ích so với Các bộ phân loại Tích hợp
 
-| Feature | Built-in | MCP |
+| Tính năng | Tích hợp | MCP |
 |---------|----------|-----|
-| Custom Models | ❌ | ✅ |
-| Business Logic | ❌ | ✅ |
-| Dynamic Updates | ❌ | ✅ |
-| User Context | ❌ | ✅ |
-| A/B Testing | ❌ | ✅ |
-| External APIs | ❌ | ✅ |
-| Latency | 5-50ms | 50-200ms |
-| Complexity | Low | High |
+| Các mô hình tùy chỉnh | ❌ | ✅ |
+| Logic kinh doanh | ❌ | ✅ |
+| Cập nhật động | ❌ | ✅ |
+| Ngữ cảnh người dùng | ❌ | ✅ |
+| A/B Kiểm tra | ❌ | ✅ |
+| API bên ngoài | ❌ | ✅ |
+| Độ trễ | 5-50ms | 50-200ms |
+| Độ phức tạp | Thấp | Cao |
 
-## Performance Considerations
+## Xem xét Hiệu suất
 
-- **Latency**: MCP adds 50-200ms per request (network + classification)
-- **Caching**: Cache MCP responses for repeated queries
-- **Timeout**: Set appropriate timeout (30s default)
-- **Fallback**: Configure default model when MCP unavailable
-- **Monitoring**: Track MCP latency and error rates
+- **Độ trễ**: MCP thêm 50-200ms mỗi yêu cầu (mạng + phân loại)
+- **Bộ nhớ đệm**: Bộ nhớ đệm phản hồi MCP cho các truy vấn lặp lại
+- **Timeout**: Đặt timeout thích hợp (mặc định 30 giây)
+- **Fallback**: Cấu hình mô hình mặc định khi MCP không có sẵn
+- **Giám sát**: Theo dõi độ trễ MCP và tỷ lệ lỗi
 
-## Reference
+## Tham chiếu
 
-See [config-mcp-classifier.yaml](https://github.com/vllm-project/semantic-router/blob/main/config/intelligent-routing/out-tree/config-mcp-classifier.yaml) for complete configuration.
+Xem [config-mcp-classifier.yaml](https://github.com/vllm-project/semantic-router/blob/main/config/intelligent-routing/out-tree/config-mcp-classifier.yaml) để xem cấu hình hoàn chỉnh.

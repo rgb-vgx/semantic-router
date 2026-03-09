@@ -1,45 +1,48 @@
-# Model Performance Evaluation
-## Why evaluate?
-Evaluation makes routing data-driven. By measuring per-category accuracy on MMLU-Pro (and doing a quick sanity check with ARC), you can:
+# Đánh Giá Hiệu Năng Mô Hình
 
-- Select the right model for each decision and configure them in decisions.modelRefs
-- Pick a sensible default_model based on overall performance
-- Decide when CoT prompting is worth the latency/cost tradeoff
-- Catch regressions when models, prompts, or parameters change
-- Keep changes reproducible and auditable for CI and releases
+## Tại sao đánh giá?
 
-In short, evaluation converts anecdotes into measurable signals that improve quality, cost efficiency, and reliability of the router.
+Đánh giá làm cho định tuyến dữ liệu hướng. Bằng cách đo độ chính xác từng danh mục MMLU-Pro (và thực hiện kiểm tra sơ bộ nhanh với ARC), bạn có thể:
+
+- Chọn mô hình phù hợp cho từng quyết định và cấu hình chúng trong decisions.modelRefs
+- Chọn một default_model hợp lý dựa trên hiệu năng tổng thể
+- Quyết định khi CoT prompting là giá trị đáng việc với sự đánh đổi độ trễ/chi phí
+- Bắt các hồi quy khi các mô hình, lời nhắc hoặc tham số thay đổi
+- Giữ các thay đổi có thể tái tạo và kiểm toán được cho CI và phát hành
+
+Tóm lại, đánh giá chuyển đổi những suy đoán thành các tín hiệu có thể đo được cải thiện chất lượng, hiệu quả chi phí và độ tin cậy của bộ định tuyến.
 
 ---
 
-This guide documents the automated workflow to evaluate models (MMLU-Pro and ARC Challenge) via a vLLM-compatible OpenAI endpoint, generate a performance-based routing config, and update `categories.model_scores` in config.
+Hướng dẫn này ghi lại quy trình làm việc tự động để đánh giá các mô hình thông qua điểm cuối OpenAI tương thích vLLM (MMLU-Pro và ARC Challenge), tạo cấu hình định tuyến dựa trên hiệu năng và cập nhật `categories.model_scores` trong cấu hình.
 
-see code in [/src/training/model_eval](https://github.com/vllm-project/semantic-router/tree/main/src/training/model_eval)
+Xem mã trong [/src/training/model_eval](https://github.com/vllm-project/semantic-router/tree/main/src/training/model_eval)
 
-### What you'll run end-to-end
-#### 1) Evaluate models 
+### Những gì bạn sẽ chạy từ đầu đến cuối
 
-- per-category accuracies
-- ARC Challenge: overall accuracy
-  
-#### 2) Visualize results
+#### 1) Đánh giá mô hình
 
-- bar/heatmap plot of per-category accuracies
+- độ chính xác từng danh mục
+- ARC Challenge: độ chính xác tổng thể
+
+#### 2) Trực quan hóa kết quả
+
+- biểu đồ thanh/heatmap của độ chính xác từng danh mục
 
 ![Bar](/img/bar.png)
 ![Heatmap](/img/heatmap.png)
 
-#### 3) Generate an updated config.yaml
+#### 3) Tạo cấu hình cập nhật config.yaml
 
-- Create decisions for each category with modelRefs
-- Set default_model to the best average performer
-- Keep or apply decision-level reasoning settings
+- Tạo quyết định cho mỗi danh mục với modelRefs
+- Đặt default_model là người thực hiện tốt nhất trung bình
+- Giữ hoặc áp dụng cài đặt lý do quyết định cấp độ
 
-## 1.Prerequisites
+## 1. Điều kiện tiên quyết
 
-- A running vLLM-compatible OpenAI endpoint serving your models
-  - Endpoint URL like http://localhost:8000/v1
-  - Optional API key if your endpoint requires one
+- Một điểm cuối OpenAI tương thích vLLM đang chạy phục vụ các mô hình của bạn
+  - URL Endpoint như http://localhost:8000/v1
+  - API key tùy chọn nếu điểm cuối của bạn cần thiết
 
   ```bash
   # Terminal 1
@@ -49,22 +52,22 @@ see code in [/src/training/model_eval](https://github.com/vllm-project/semantic-
   vllm serve Qwen/Qwen3-0.6B --port 11435 --served_model_name qwen3-0.6B
   ```
 
-- Python packages for evaluation scripts:
-  - From the repo root: matplotlib in [requirements.txt](https://github.com/vllm-project/semantic-router/blob/main/requirements.txt)
-  - From `/src/training/model_eval`: [requirements.txt](https://github.com/vllm-project/semantic-router/blob/main/src/training/model_eval/requirements.txt)
+- Gói Python cho các tập lệnh đánh giá:
+  - Từ thư mục gốc của repo: matplotlib trong [requirements.txt](https://github.com/vllm-project/semantic-router/blob/main/requirements.txt)
+  - Từ `/src/training/model_eval`: [requirements.txt](https://github.com/vllm-project/semantic-router/blob/main/src/training/model_eval/requirements.txt)
 
   ```bash
-  # We will work at this dir in this guide
+  # Chúng tôi sẽ làm việc ở thư mục này trong hướng dẫn này
   cd /src/training/model_eval
   pip install -r requirements.txt
   ```
 
-**⚠️ Critical Configuration Requirement:**
+**⚠️ Yêu Cầu Cấu Hình Quan Trọng:**
 
-The `--served-model-name` parameter in your vLLM command **must exactly match** the model names in your `config/config.yaml`:
+Tham số `--served-model-name` trong lệnh vLLM của bạn **phải khớp chính xác** với tên mô hình trong `config/config.yaml`:
 
 ```yaml
-# config/config.yaml must match the --served-model-name values above
+# config/config.yaml phải khớp với các giá trị --served-model-name ở trên
 vllm_endpoints:
   - name: "endpoint1"
     address: "127.0.0.1"
@@ -74,23 +77,24 @@ vllm_endpoints:
     port: 11435
 
 model_config:
-  "phi4":                     # ✅ Matches --served_model_name phi4
-    # ... configuration
-  "qwen3-0.6B":               # ✅ Matches --served_model_name qwen3-0.6B
-    # ... configuration
+  "phi4":                     # Khớp --served_model_name phi4
+    # ... cấu hình
+  "qwen3-0.6B":               # Khớp --served_model_name qwen3-0.6B
+    # ... cấu hình
 ```
 
-**Optional tip:**
+**Mẹo tùy chọn:**
 
-- Ensure your `config/config.yaml` includes your deployed model names under `vllm_endpoints[].models` and any pricing/policy under `model_config` if you plan to use the generated config directly.
+- Đảm bảo `config/config.yaml` của bạn bao gồm tên mô hình được triển khai của bạn trong `vllm_endpoints[].models` và bất kỳ giá định giá/chính sách nào trong `model_config` nếu bạn dự định sử dụng cấu hình được tạo trực tiếp.
 
-## 2.Evaluate on MMLU-Pro
-see script in [mmul_pro_vllm_eval.py](https://github.com/vllm-project/semantic-router/blob/main/src/training/model_eval/mmlu_pro_vllm_eval.py)
+## 2. Đánh Giá MMLU-Pro
 
-### Example usage patterns
+Xem tập lệnh trong [mmul_pro_vllm_eval.py](https://github.com/vllm-project/semantic-router/blob/main/src/training/model_eval/mmlu_pro_vllm_eval.py)
+
+### Ví dụ về mô hình sử dụng
 
 ```bash
-# Evaluate a few models, few samples per category, direct prompting
+# Đánh giá một vài mô hình, vài mẫu cho mỗi danh mục, nhắc trực tiếp
 python mmlu_pro_vllm_eval.py \
   --endpoint http://localhost:11434/v1 \
   --models phi4 \
@@ -101,49 +105,50 @@ python mmlu_pro_vllm_eval.py \
   --models qwen3-0.6B \
   --samples-per-category 10
 
-# Evaluate with CoT (results saved under *_cot)
+# Đánh giá với CoT (kết quả được lưu dưới *_cot)
 python mmlu_pro_vllm_eval.py \
   --endpoint http://localhost:11435/v1 \
   --models qwen3-0.6B \
   --samples-per-category 10
-  --use-cot 
+  --use-cot
 
-# If you have set up Semantic Router properly, you can run in one go
+# Nếu bạn đã thiết lập Semantic Router đúng, bạn có thể chạy trong một lần
 python mmlu_pro_vllm_eval.py \
   --endpoint http://localhost:8801/v1 \
   --models qwen3-0.6B, phi4 \
   --samples-per-category
-  # --use-cot # Uncomment this line if use CoT
+  # --use-cot # Bỏ ghi chú dòng này nếu sử dụng CoT
 ```
 
-### Key flags
+### Các cờ chính
 
-- **--endpoint**: vLLM OpenAI URL (default http://localhost:8000/v1)
-- **--models**: space-separated list OR a single comma-separated string; if omitted, the script queries /models from the endpoint
-- **--categories**: restrict evaluation to specific categories; if omitted, uses all categories in the dataset
-- **--samples-per-category**: limit questions per category (useful for quick runs)
-- **--use-cot**: enables Chain-of-Thought prompting variant; results are saved in a separate subfolder suffix (_cot vs _direct)
-- **--concurrent-requests**: concurrency for throughput
-- **--output-dir**: where results are saved (default results)
-- **--max-tokens**, **--temperature**, **--seed**: generation and reproducibility knobs
+- **--endpoint**: URL OpenAI vLLM (mặc định http://localhost:8000/v1)
+- **--models**: danh sách được phân tách bằng khoảng trắng HOẶC chuỗi được phân tách bằng dấu phẩy; nếu bỏ qua, tập lệnh truy vấn /models từ điểm cuối
+- **--categories**: hạn chế đánh giá cho các danh mục cụ thể; nếu bỏ qua, sử dụng tất cả các danh mục trong dataset
+- **--samples-per-category**: giới hạn câu hỏi cho mỗi danh mục (hữu ích cho các lần chạy nhanh)
+- **--use-cot**: cho phép biến thể Chain-of-Thought prompting; kết quả được lưu trong thư mục con riêng biệt (_cot vs _direct)
+- **--concurrent-requests**: đồng thời cho thông lượng
+- **--output-dir**: nơi lưu kết quả (kết quả mặc định)
+- **--max-tokens**, **--temperature**, **--seed**: tạo nút và tái tạo lại
 
-### What it outputs per model
+### Nó xuất ra những gì cho mỗi mô hình
 
 - **results/Model_Name_(direct|cot)/**
-  - **detailed_results.csv**: one row per question with is_correct and category
+  - **detailed_results.csv**: một hàng cho mỗi câu hỏi với is_correct và danh mục
   - **analysis.json**: overall_accuracy, category_accuracy map, avg_response_time, counts
-  - **summary.json**: condensed metrics
-- **mmlu_pro_vllm_eval.txt**: prompts and answers log (debug/inspection)
+  - **summary.json**: số liệu cô đặc
+- **mmlu_pro_vllm_eval.txt**: nhật ký lời nhắc và câu trả lời (gỡ lỗi/kiểm tra)
 
-**Note**
+**Ghi chú**
 
-- **Model naming**: slashes are replaced with underscores for folder names; e.g., gemma3:27b -> gemma3:27b_direct directory.
-- Category accuracy is computed on successful queries only; failed requests are excluded.
+- **Đặt tên mô hình**: dấu gạch chéo được thay thế bằng dấu gạch dưới cho tên thư mục; ví dụ: gemma3:27b -> thư mục gemma3:27b_direct.
+- Độ chính xác danh mục được tính trên các truy vấn thành công; các yêu cầu không thành công bị loại trừ.
 
-## 3.Evaluate on ARC Challenge (optional, overall sanity check)
-see script in [arc_challenge_vllm_eval.py](https://github.com/vllm-project/semantic-router/blob/main/src/training/model_eval/arc_challenge_vllm_eval.py)
+## 3. Đánh Giá trên ARC Challenge (tùy chọn, kiểm tra sơ bộ tổng thể)
 
-### Example usage patterns
+Xem tập lệnh trong [arc_challenge_vllm_eval.py](https://github.com/vllm-project/semantic-router/blob/main/src/training/model_eval/arc_challenge_vllm_eval.py)
+
+### Ví dụ về mô hình sử dụng
 
 ``` bash
 python arc_challenge_vllm_eval.py \
@@ -152,128 +157,131 @@ python arc_challenge_vllm_eval.py \
   --output-dir arc_results
 ```
 
-### Key flags
+### Các cờ chính
 
-- **--samples**: total questions to sample (default 20); ARC is not categorized in our script
-- Other flags mirror the **MMLU-Pro** script
+- **--samples**: tổng số câu hỏi cần lấy mẫu (mặc định 20); ARC không được phân loại trong tập lệnh của chúng tôi
+- Các cờ khác phản chiếu tập lệnh **MMLU-Pro**
 
-### What it outputs per model
+### Nó xuất ra những gì cho mỗi mô hình
 
 - **results/Model_Name_(direct|cot)/**
-  - **detailed_results.csv**: one row per question with is_correct and category
+  - **detailed_results.csv**: một hàng cho mỗi câu hỏi với is_correct và danh mục
   - **analysis.json**: overall_accuracy, avg_response_time
-  - **summary.json**: condensed metrics
-- **arc_challenge_vllm_eval.txt**: prompts and answers log (debug/inspection)
+  - **summary.json**: số liệu cô đặc
+- **arc_challenge_vllm_eval.txt**: nhật ký lời nhắc và câu trả lời (gỡ lỗi/kiểm tra)
 
-**Note**
+**Ghi chú**
 
-- ARC results do not feed `categories[].model_scores` directly, but they can help spot regressions.
+- Kết quả ARC không trực tiếp cấp `categories[].model_scores`, nhưng chúng có thể giúp phát hiện hồi quy.
 
-## 4.Visualize per-category performance
-see script in [plot_category_accuracies.py](https://github.com/vllm-project/semantic-router/blob/main/src/training/model_eval/plot_category_accuracies.py)
+## 4. Trực Quan Hóa Hiệu Năng Từng Danh Mục
 
-### Example usage patterns:
+Xem tập lệnh trong [plot_category_accuracies.py](https://github.com/vllm-project/semantic-router/blob/main/src/training/model_eval/plot_category_accuracies.py)
+
+### Ví dụ về mô hình sử dụng:
 
 ```bash
-# Use results/ to generate bar plot
+# Sử dụng results/ để tạo biểu đồ thanh
 python plot_category_accuracies.py \
   --results-dir results \
   --plot-type bar \
   --output-file results/bar.png
 
-# Use results/ to generate heatmap plot
+# Sử dụng results/ để tạo biểu đồ heatmap
 python plot_category_accuracies.py \
   --results-dir results \
   --plot-type heatmap \
   --output-file results/heatmap.png
 
-# Use sample-data to generate example plot
+# Sử dụng sample-data để tạo biểu đồ ví dụ
 python src/training/model_eval/plot_category_accuracies.py \
   --sample-data \
   --plot-type heatmap \
   --output-file results/category_accuracies.png
 ```
 
-### Key flags
+### Các cờ chính
 
-- **--results-dir**: where analysis.json files are
-- **--plot-type**: bar or heatmap
-- **--output-file**: output image path (default model_eval/category_accuracies.png)
-- **--sample-data**: if no results exist, generates fake data to preview the plot
+- **--results-dir**: nơi các tệp analysis.json nằm
+- **--plot-type**: thanh hoặc heatmap
+- **--output-file**: đường dẫn hình ảnh đầu ra (mô hình_eval/category_accuracies.png mặc định)
+- **--sample-data**: nếu không có kết quả nào tồn tại, hãy tạo dữ liệu giả để xem trước cốt truyện
 
-### What it does
+### Nó làm cái gì
 
-- Finds all `results/**/analysis.json`, aggregates analysis["category_accuracy"] per model
-- Adds an Overall column representing the average across categories
-- Produces a figure to quickly compare model/category performance
+- Tìm tất cả `results/**/analysis.json`, tổng hợp analysis["category_accuracy"] cho mỗi mô hình
+- Thêm một cột Tổng thể đại diện cho mức trung bình trên các danh mục
+- Tạo một hình để nhanh chóng so sánh hiệu năng mô hình/danh mục
 
-**Note**
+**Ghi chú**
 
-- It merges `direct` and `cot` as distinct model variants by appending `:direct` or `:cot` to the label; the legend hides `:direct` for brevity.
+- Nó hợp nhất `direct` và `cot` là các biến thể mô hình khác biệt bằng cách thêm `:direct` hoặc `:cot` vào nhãn; huyền thoại ẩn `:direct` để tóm gọn.
 
-## 5.Generate performance-based routing config
-see script in [result_to_config.py](https://github.com/vllm-project/semantic-router/blob/main/src/training/model_eval/result_to_config.py)
+## 5. Tạo Cấu Hình Định Tuyến Dựa Trên Hiệu Năng
 
-### Example usage patterns
+Xem tập lệnh trong [result_to_config.py](https://github.com/vllm-project/semantic-router/blob/main/src/training/model_eval/result_to_config.py)
+
+### Ví dụ về mô hình sử dụng
 
 ```bash
-# Use results/ to generate a new config file (not overridden)
+# Sử dụng results/ để tạo tệp cấu hình mới (không bị ghi đè)
 python src/training/model_eval/result_to_config.py \
   --results-dir results \
   --output-file config/config.eval.yaml
 
-# Modify similarity-thredshold
+# Sửa đổi ngưỡng tương tự
 python src/training/model_eval/result_to_config.py \
   --results-dir results \
   --output-file config/config.eval.yaml \
   --similarity-threshold 0.85
 
-# Generate from specific folder
+# Tạo từ thư mục cụ thể
 python src/training/model_eval/result_to_config.py \
   --results-dir results/mmlu_run_2025_09_10 \
   --output-file config/config.eval.yaml
 ```
 
-### Key flags
+### Các cờ chính
 
-- **--results-dir**: points to the folder where analysis.json files live
-- **--output-file**: target config path (default config/config.yaml)
-- **--similarity-threshold**: semantic cache threshold to set in the generated config
+- **--results-dir**: trỏ đến thư mục nơi các tệp analysis.json nằm
+- **--output-file**: đường dẫn cấu hình mục tiêu (config/config.yaml mặc định)
+- **--similarity-threshold**: ngưỡng bộ nhớ cache ngữ nghĩa để đặt trong cấu hình được tạo
 
-### What it does
+### Nó làm cái gì
 
-- Reads all `analysis.json` files, extracting analysis["category_accuracy"]
-- Constructs a new config:
-  - **categories**: Creates simplified category definitions (name only)
-  - **decisions**: For each category present in results, creates a decision with:
-    - **rules**: Domain-based routing conditions
-    - **modelRefs**: Models ranked by accuracy (no score field)
-    - **plugins**: System prompt and other configurations
-  - **default_model**: the best average performer across categories
-  - **decision reasoning settings**: auto-filled from a built-in mapping (you can adjust after generation)
-    - math, physics, chemistry, CS, engineering -> high reasoning
-    - others default -> low/medium
-  - Leaves out any special “auto” placeholder models if present
+- Đọc tất cả các tệp `analysis.json`, trích xuất analysis["category_accuracy"]
+- Xây dựng một cấu hình mới:
+  - **categories**: Tạo định nghĩa danh mục đơn giản (chỉ tên)
+  - **decisions**: Cho mỗi danh mục có trong kết quả, tạo một quyết định với:
+    - **rules**: Điều kiện định tuyến dựa trên miền
+    - **modelRefs**: Các mô hình được xếp hạng theo độ chính xác (không có trường điểm)
+    - **plugins**: Lời nhắc hệ thống và cấu hình khác
+  - **default_model**: người thực hiện tốt nhất trung bình trên các danh mục
+  - **Cài đặt lý do quyết định**: tự động điền từ ánh xạ tích hợp (bạn có thể điều chỉnh sau khi tạo)
+    - toán, vật lý, hóa học, CS, kỹ thuật -> lý luận cao
+    - khác mặc định -> thấp/trung bình
+  - Bỏ qua bất kỳ mô hình trình giữ chỗ đặc biệt "auto" nào nếu có
 
-### Schema alignment
+### Căn Chỉnh Sơ Đồ
 
-- **categories[].name**: the MMLU-Pro category string (simplified, no model_scores)
-- **decisions[].name**: matches category name
-- **decisions[].modelRefs**: models ranked by accuracy for that category (no score field)
-- **decisions[].rules**: domain-based routing conditions
-- **decisions[].plugins**: system_prompt and other policy configurations
-- **default_model**: a top performer across categories (approach suffix removed, e.g., gemma3:27b from gemma3:27b:direct)
-- Keeps other config sections (semantic_cache, tools, classifier, prompt_guard) with reasonable defaults; you can edit them post-generation if your environment differs
+- **categories[].name**: chuỗi danh mục MMLU-Pro (đơn giản hóa, không có model_scores)
+- **decisions[].name**: khớp tên danh mục
+- **decisions[].modelRefs**: các mô hình được xếp hạng theo độ chính xác cho danh mục đó (không có trường điểm)
+- **decisions[].rules**: điều kiện định tuyến dựa trên miền
+- **decisions[].plugins**: cấu hình system_prompt và chính sách khác
+- **default_model**: một người thực hiện hàng đầu trên các danh mục (tiền tố cách tiếp cận bị xóa, ví dụ: gemma3:27b từ gemma3:27b:direct)
+- Giữ các phần cấu hình khác (semantic_cache, tools, classifier, prompt_guard) với các mặc định hợp lý; bạn có thể chỉnh sửa chúng sau khi tạo nếu môi trường của bạn khác
 
-**Note**
+**Ghi chú**
 
-- This script only work with results from **MMLU_Pro** Evaluation.
-- Existing config.yaml can be overwritten. Consider writing to a temp file first and diffing:
+- Tập lệnh này chỉ hoạt động với kết quả từ **MMLU_Pro** Evaluation.
+- Cấu hình hiện tại config.yaml có thể bị ghi đè. Hãy cân nhắc viết vào tệp tạm thời trước và diff:
   - `--output-file config/config.eval.yaml`
-- If your production config.yaml carries **environment-specific settings (endpoints, pricing, policies)**, port the evaluated `decisions[].modelRefs` and `default_model` back into your canonical config.
+- Nếu config.yaml sản xuất của bạn mang **cài đặt cụ thể về môi trường (điểm cuối, giá định giá, chính sách)**, hãy port `decisions[].modelRefs` được đánh giá và `default_model` trở lại cấu hình chính tắc của bạn.
 
-### Example config.eval.yaml
-see more about config at [configuration](https://vllm-semantic-router.com/docs/installation/configuration)
+### Ví Dụ config.eval.yaml
+
+Xem thêm về cấu hình tại [configuration](https://vllm-semantic-router.com/docs/installation/configuration)
 
 ```yaml
 bert_model:
@@ -299,7 +307,7 @@ prompt_guard:
   use_cpu: true
   jailbreak_mapping_path: models/jailbreak_classifier_modernbert-base_model/jailbreak_type_mapping.json
 
-# Lack of endpoint config and model_config right here, modify here as needed
+# Thiếu cấu hình điểm cuối và model_config ngay tại đây, sửa đổi ở đây khi cần
 
 classifier:
   category_model:
@@ -362,7 +370,7 @@ decisions:
         system_prompt: "Legal content is typically explanatory"
         mode: "replace"
 
-# Ignore some categories here
+# Bỏ qua một số danh mục ở đây
 
 - name: engineering
   description: "Route engineering queries"

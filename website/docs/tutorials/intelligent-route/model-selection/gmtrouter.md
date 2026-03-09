@@ -1,104 +1,104 @@
-# GMTRouter Selection
+# Lựa Chọn GMTRouter
 
-GMTRouter uses a heterogeneous graph neural network to learn personalized routing decisions based on multi-turn user interactions. It builds a graph capturing user-LLM-query-response relationships and learns which models work best for each user over time.
+GMTRouter sử dụng mạng thần kinh đồ thị dị thể để học các quyết định định tuyến được cá nhân hóa dựa trên tương tác người dùng nhiều vòng. Nó xây dựng một đồ thị nắm bắt mối quan hệ giữa người dùng-LLM-truy vấn-phản hồi và học tập những mô hình nào hoạt động tốt nhất cho từng người dùng theo thời gian.
 
-This personalized approach can achieve **0.9% - 21.6% higher accuracy** and **0.006 - 0.309 higher AUC** compared to non-personalized routing.
+Cách tiếp cận được cá nhân hóa này có thể đạt được **0,9% - 21,6% độ chính xác cao hơn** và **0,006 - 0,309 AUC cao hơn** so với định tuyến không được cá nhân hóa.
 
-> **Reference**: [GMTRouter: Personalized LLM Router over Multi-turn User Interactions](https://arxiv.org/abs/2511.08590) by Wang et al. Our implementation is inspired by this paper's graph-based personalization approach.
+> **Tham khảo**: [GMTRouter: Personalized LLM Router over Multi-turn User Interactions](https://arxiv.org/abs/2511.08590) của Wang et al. Cách triển khai của chúng tôi được lấy cảm hứng từ cách tiếp cận cá nhân hóa dựa trên đồ thị trong bài báo này.
 
-## Algorithm Flow
+## Luồng Thuật toán
 
 ```mermaid
 flowchart TD
-    A[User Query] --> B[Get User Node]
-    A --> C[Embed Query]
-    B --> D[Build/Update<br/>Heterogeneous Graph]
+    A[Truy vấn của người dùng] --> B[Lấy nút người dùng]
+    A --> C[Nhúng truy vấn]
+    B --> D[Xây dựng/Cập nhật<br/>Đồ thị dị thể]
     C --> D
-    D --> E[Apply HGT<br/>Convolution Layers]
-    E --> F[Cross-Attention<br/>Prediction Head]
-    F --> G[Select Model with<br/>Highest Score]
-    G --> H[Route to Model]
-    H --> I[Record Response<br/>in Graph]
-    
+    D --> E[Áp dụng lớp<br/>Tích chập HGT]
+    E --> F[Đầu ra dự đoán<br/>Chú ý chéo]
+    F --> G[Chọn mô hình có<br/>điểm cao nhất]
+    G --> H[Định tuyến đến mô hình]
+    H --> I[Ghi lại phản hồi<br/>trong đồ thị]
+
     style E stroke:#000,stroke-width:2px,stroke-dasharray: 5 5
     style F stroke:#000,stroke-width:2px,stroke-dasharray: 5 5
 ```
 
-## Mathematical Foundation
+## Nền Tảng Toán Học
 
-### Heterogeneous Graph Structure
+### Cấu Trúc Đồ Thị Dị Thể
 
-The graph contains 4 node types to capture multi-turn interaction patterns:
+Đồ thị chứa 4 loại nút để nắm bắt các mẫu tương tác nhiều vòng:
 
 ```text
-G = (V, E) where V = V_user ∪ V_llm ∪ V_query ∪ V_response
+G = (V, E) trong đó V = V_user ∪ V_llm ∪ V_query ∪ V_response
 ```
 
-Node types:
+Các loại nút:
 
-- **User nodes**: Represent individual users with their interaction history
-- **LLM nodes**: Represent available language models
-- **Query nodes**: Represent queries submitted by users
-- **Response nodes**: Capture model outputs and quality signals
+- **Nút người dùng**: Đại diện cho các người dùng cá nhân với lịch sử tương tác của họ
+- **Nút LLM**: Đại diện cho các mô hình ngôn ngữ có sẵn
+- **Nút truy vấn**: Đại diện cho các truy vấn do người dùng gửi
+- **Nút phản hồi**: Ghi lại các đầu ra mô hình và các tín hiệu chất lượng
 
-Virtual **turn nodes** connect sequential interactions within a conversation.
+Các nút **vòng ảo** kết nối các tương tác tuần tự trong một cuộc trò chuyện.
 
-### HGT Convolution Layer
+### Lớp Tích Chập HGT
 
-The paper uses Heterogeneous Graph Transformer (HGT) convolution with layer normalization:
+Bài báo sử dụng tích chập Heterogeneous Graph Transformer (HGT) với chuẩn hóa lớp:
 
 ```text
 h_v^(l+1) = LayerNorm(h_v^(l) + HGTConv(h_v^(l), {h_u^(l) : u ∈ N(v)}))
 
-HGTConv applies type-specific attention:
+HGTConv áp dụng chú ý cụ thể về loại:
   Attention(v, u) = softmax_u(W_τ(v),τ(u) · h_v · h_u^T / √d)
 ```
 
-where τ(v) denotes the node type of v.
+trong đó τ(v) ký hiệu loại nút của v.
 
-### Cross-Attention Prediction Head
+### Đầu Ra Dự Đoán Chú Ý Chéo
 
-Final user-model preference score uses cross-attention:
+Điểm ưu tiên người dùng-mô hình cuối cùng sử dụng chú ý chéo:
 
 ```text
 s_{u,q,m} = f_pred(h_u^(L), h_q^(0), h_m^(L))
 
-where:
-  h_u^(L) = user embedding after L layers
-  h_q^(0) = query embedding
-  h_m^(L) = model embedding after L layers
+trong đó:
+  h_u^(L) = nhúng người dùng sau L lớp
+  h_q^(0) = nhúng truy vấn
+  h_m^(L) = nhúng mô hình sau L lớp
 ```
 
-## Core Algorithm (Go)
+## Thuật Toán Cốt Lõi (Go)
 
 ```go
-// Select using graph-based preference learning
+// Chọn sử dụng học tập ưu tiên dựa trên đồ thị
 func (s *GMTRouterSelector) Select(ctx context.Context, selCtx *SelectionContext) (*SelectionResult, error) {
     userID := s.getUserID(selCtx)
     queryEmbed := s.embedQuery(selCtx.Query)
-    
-    // Update graph with new query node
+
+    // Cập nhật đồ thị bằng nút truy vấn mới
     s.addQueryNode(userID, queryEmbed)
-    
-    // Run HGT convolution layers
+
+    // Chạy các lớp tích chập HGT
     embeddings := s.runHGTLayers(userID)
-    
-    // Compute preference scores via cross-attention
+
+    // Tính toán điểm ưu tiên thông qua chú ý chéo
     var bestModel string
     var bestScore float64 = -1
-    
+
     for _, candidate := range selCtx.CandidateModels {
         userEmbed := embeddings.User[userID]
         modelEmbed := embeddings.LLM[candidate.Model]
-        
+
         score := s.crossAttentionPredict(userEmbed, queryEmbed, modelEmbed)
-        
+
         if score > bestScore {
             bestScore = score
             bestModel = candidate.Model
         }
     }
-    
+
     return &SelectionResult{
         SelectedModel: bestModel,
         Score:         bestScore,
@@ -107,26 +107,26 @@ func (s *GMTRouterSelector) Select(ctx context.Context, selCtx *SelectionContext
 }
 ```
 
-## How It Works
+## Cách Hoạt Động
 
-1. Build a heterogeneous graph with 4 node types: users, LLMs, queries, responses
-2. Connect nodes to form multi-turn interaction chains (via virtual turn nodes)
-3. Apply HGT convolution layers to learn embeddings
-4. Use cross-attention prediction head to compute user-specific model preferences
-5. Select the model with highest preference score for the user
+1. Xây dựng một đồ thị dị thể có 4 loại nút: người dùng, LLM, truy vấn, phản hồi
+2. Kết nối các nút để tạo thành các chuỗi tương tác nhiều vòng (thông qua các nút vòng ảo)
+3. Áp dụng các lớp tích chập HGT để học các nhúng
+4. Sử dụng đầu ra dự đoán chú ý chéo để tính toán ưu tiên mô hình cụ thể cho người dùng
+5. Chọn mô hình có điểm ưu tiên cao nhất cho người dùng
 
-## Configuration
+## Cấu Hình
 
 ```yaml
 decision:
   algorithm:
     type: gmtrouter
     gmtrouter:
-      num_layers: 2           # HGT layer depth
-      hidden_dim: 64          # Embedding dimension
-      num_heads: 4            # Attention heads
-      learn_preferences: true # Enable preference learning
-      model_path: null        # Optional pre-trained weights
+      num_layers: 2           # Độ sâu lớp HGT
+      hidden_dim: 64          # Kích thước chiều nhúng
+      num_heads: 4            # Đầu chú ý
+      learn_preferences: true # Kích hoạt học tập ưu tiên
+      model_path: null        # Trọng số được đào tạo trước tùy chọn
 
 models:
   - name: gpt-4
@@ -137,19 +137,19 @@ models:
     backend: anthropic
 ```
 
-## Key Parameters
+## Tham Số Chính
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `num_layers` | 2 | Number of HGT layers (1-5) |
-| `hidden_dim` | 64 | Hidden dimension size |
-| `num_heads` | 4 | Number of attention heads |
-| `learn_preferences` | true | Enable online preference learning |
-| `model_path` | null | Path to pre-trained model weights |
+| Tham số | Mặc định | Mô tả |
+|---------|---------|-------|
+| `num_layers` | 2 | Số lớp HGT (1-5) |
+| `hidden_dim` | 64 | Kích thước chiều ẩn |
+| `num_heads` | 4 | Số đầu chú ý |
+| `learn_preferences` | true | Kích hoạt học tập ưu tiên trực tuyến |
+| `model_path` | null | Đường dẫn đến trọng số mô hình được đào tạo trước |
 
-## Graph Structure
+## Cấu Trúc Đồ Thị
 
-GMTRouter builds a graph capturing multi-turn interactions:
+GMTRouter xây dựng một đồ thị nắm bắt các tương tác nhiều vòng:
 
 ```
 User ←→ Query ←→ Response ←→ LLM
@@ -157,46 +157,46 @@ User ←→ Query ←→ Response ←→ LLM
          └── Turn ───┘
 ```
 
-Edges represent:
+Các cạnh đại diện cho:
 
-- User-Query: User submitted this query
-- Query-Response: Query received this response
-- Response-LLM: Response was generated by this LLM
-- Turn edges: Connect sequential interactions in a conversation
+- User-Query: Người dùng đã gửi truy vấn này
+- Query-Response: Truy vấn nhận được phản hồi này
+- Response-LLM: Phản hồi được tạo ra bởi LLM này
+- Cạnh vòng: Kết nối các tương tác tuần tự trong một cuộc trò chuyện
 
-## Pre-training (Optional)
+## Đào Tạo Trước (Tùy Chọn)
 
-For better cold-start performance, pre-train on historical data:
+Để có hiệu suất khởi động lạnh tốt hơn, hãy đào tạo trước trên dữ liệu lịch sử:
 
 ```bash
 cd src/training/rl_model_selection
 python train_gmtrouter.py --data_path ./data/interactions.json
 ```
 
-Then reference the model:
+Sau đó tham chiếu mô hình:
 
 ```yaml
 gmtrouter:
   model_path: /models/gmtrouter_trained.pt
 ```
 
-## When to Use GMTRouter
+## Khi Nào Sử Dụng GMTRouter
 
-**Good for:**
+**Phù hợp cho:**
 
-- Multi-user environments with diverse preferences
-- Systems with rich multi-turn interaction history
-- Personalization requirements across conversations
+- Môi trường nhiều người dùng với sở thích đa dạng
+- Hệ thống có lịch sử tương tác nhiều vòng phong phú
+- Yêu cầu cá nhân hóa trên các cuộc trò chuyện
 
-**Consider alternatives when:**
+**Cân nhắc các giải pháp thay thế khi:**
 
-- Few users (not enough data for personalization)
-- No historical data available
-- Latency-critical applications (GNN adds ~10ms)
+- Có ít người dùng (dữ liệu không đủ để cá nhân hóa)
+- Không có dữ liệu lịch sử
+- Các ứng dụng nhạy cảm về độ trễ (GNN thêm ~10ms)
 
-## Best Practices
+## Các Thực Hành Tốt Nhất
 
-1. **Start without pre-training**: Online learning works for many cases
-2. **Collect interaction data**: More turns = better personalization
-3. **Monitor per-user metrics**: Verify personalization is working
-4. **Use moderate hidden_dim**: 64 balances quality and speed
+1. **Bắt đầu mà không cần đào tạo trước**: Học tập trực tuyến hoạt động cho nhiều trường hợp
+2. **Thu thập dữ liệu tương tác**: Càng nhiều vòng = cá nhân hóa tốt hơn
+3. **Giám sát các chỉ số trên mỗi người dùng**: Xác minh rằng cá nhân hóa đang hoạt động
+4. **Sử dụng hidden_dim vừa phải**: 64 cân bằng chất lượng và tốc độ

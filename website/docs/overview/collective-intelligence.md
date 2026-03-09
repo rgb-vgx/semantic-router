@@ -2,68 +2,68 @@
 sidebar_position: 3
 ---
 
-# What is Collective Intelligence?
+# Collective Intelligence là gì?
 
-**Collective Intelligence** is the emergent intelligence that arises when multiple models, signals, and decision-making processes work together as a unified system.
+**Collective Intelligence** là trí thông minh xuất hiện khi nhiều mô hình, tín hiệu và quá trình ra quyết định làm việc cùng nhau như một hệ thống thống nhất.
 
-## The Core Idea
+## Ý tưởng cốt lõi
 
-Just as a team of specialists can solve problems better than any individual expert, a system of specialized LLMs can provide better results than any single model.
+Cũng như một đội chuyên gia có thể giải quyết các vấn đề tốt hơn bất kỳ chuyên gia nào, một hệ thống gồm các LLM chuyên biệt có thể cung cấp kết quả tốt hơn bất kỳ mô hình nào.
 
-### Traditional Approach: Single Model
-
-```
-User Query → Single LLM → Response
-```
-
-**Limitations**:
-
-- One model tries to be good at everything
-- No specialization or optimization
-- Same model for simple and complex tasks
-- No learning from patterns
-
-### Collective Intelligence Approach: System of Models
+### Phương pháp truyền thống: Mô hình duy nhất
 
 ```
-User Query → Signal Extraction → Decision Engine → Best Model → Response
+Truy vấn người dùng → Single LLM → Phản hồi
+```
+
+**Hạn chế**:
+
+- Một mô hình cố gắng tốt ở tất cả mọi thứ
+- Không chuyên môn hóa hoặc tối ưu hóa
+- Cùng một mô hình cho các tác vụ đơn giản và phức tạp
+- Không học từ các mẫu
+
+### Phương pháp Collective Intelligence: Hệ thống mô hình
+
+```
+Truy vấn người dùng → Trích xuất tín hiệu → Công cụ quyết định → Mô hình tốt nhất → Phản hồi
               ↓                    ↓                  ↓
            8 Signal Types      AND/OR Rules      Specialized Models
               ↓                    ↓                  ↓
          Context Analysis    Smart Selection    Plugin Chain
 ```
 
-**Benefits**:
+**Lợi ích**:
 
-- Each model focuses on what it does best
-- System learns from patterns across all interactions
-- Adaptive routing based on multiple signals
-- Emergent intelligence from signal fusion
+- Mỗi mô hình tập trung vào những gì nó làm tốt nhất
+- Hệ thống học từ các mẫu trên tất cả các tương tác
+- Định tuyến thích ứng dựa trên nhiều tín hiệu
+- Trí thông minh xuất hiện từ hợp nhất tín hiệu
 
-## How Collective Intelligence Emerges
+## Cách Collective Intelligence xuất hiện
 
-### 1. Signal Diversity
+### 1. Tín hiệu đa dạng
 
-Different signals capture different aspects of intelligence:
+Các tín hiệu khác nhau nắm bắt các khía cạnh khác nhau của trí thông minh:
 
-| Signal Type | Intelligence Aspect |
+| Loại tín hiệu | Khía cạnh trí thông minh |
 |------------|-------------------|
-| **keyword** | Pattern recognition |
-| **embedding** | Semantic understanding |
-| **domain** | Knowledge classification |
-| **fact_check** | Truth verification needs |
-| **user_feedback** | User satisfaction |
-| **preference** | Intent matching |
-| **language** | Multi-language detection |
+| **keyword** | Nhận dạng mẫu |
+| **embedding** | Hiểu biết ngữ nghĩa |
+| **domain** | Phân loại kiến thức |
+| **fact_check** | Nhu cầu xác minh sự thật |
+| **user_feedback** | Sự hài lòng của người dùng |
+| **preference** | Khớp ý định |
+| **language** | Phát hiện đa ngôn ngữ |
 
-**Collective benefit**: The combination of signals provides a richer understanding than any single signal.
+**Lợi ích tập thể**: Sự kết hợp của các tín hiệu cung cấp sự hiểu biết phong phú hơn bất kỳ tín hiệu nào.
 
-### 2. Decision Fusion
+### 2. Hợp nhất quyết định
 
-Signals are combined using logical operators:
+Các tín hiệu được kết hợp bằng các toán tử logic:
 
 ```yaml
-# Example: Math routing with multiple signals
+# Ví dụ: Định tuyến toán học với nhiều tín hiệu
 decisions:
   - name: advanced_math
     rules:
@@ -77,11 +77,11 @@ decisions:
           name: "math_intent"
 ```
 
-**Collective benefit**: Multiple signals voting together make more accurate decisions than any single signal.
+**Lợi ích tập thể**: Nhiều tín hiệu bình chọn cùng nhau đưa ra quyết định chính xác hơn bất kỳ tín hiệu nào.
 
-### 3. Model Specialization
+### 3. Chuyên môn hóa mô hình
 
-Different models contribute their strengths:
+Các mô hình khác nhau đóng góp những điểm mạnh của chúng:
 
 ```yaml
 modelRefs:
@@ -93,11 +93,11 @@ modelRefs:
     weight: 1.0
 ```
 
-**Collective benefit**: System-level intelligence emerges from routing to the right specialist.
+**Lợi ích tập thể**: Trí thông minh cấp hệ thống xuất hiện từ định tuyến tới chuyên gia thích hợp.
 
-### 4. Plugin Collaboration
+### 4. Cộng tác Plugin
 
-Plugins work together to enhance responses:
+Các plugin làm việc cùng nhau để cải thiện phản hồi:
 
 ```yaml
 plugins:
@@ -108,19 +108,19 @@ plugins:
   - type: "hallucination"     # Quality assurance
 ```
 
-**Collective benefit**: Multiple layers of processing create a more robust and secure system.
+**Lợi ích tập thể**: Nhiều lớp xử lý tạo ra một hệ thống mạnh mẽ và an toàn hơn.
 
-## Real-World Example
+## Ví dụ thực tế
 
-Let's see collective intelligence in action:
+Hãy xem collective intelligence trong hành động:
 
-### User Query
+### Truy vấn người dùng
 
 ```
 "Prove that the square root of 2 is irrational"
 ```
 
-### Signal Extraction
+### Trích xuất tín hiệu
 
 ```yaml
 signals_detected:
@@ -130,7 +130,7 @@ signals_detected:
   fact_check: true                                  # Proof requires verification
 ```
 
-### Decision Process
+### Quá trình quyết định
 
 ```yaml
 decision_made: "advanced_math"
@@ -138,7 +138,7 @@ reason: "All math signals agree (keyword + embedding + domain)"
 confidence: 0.95
 ```
 
-### Model Selection
+### Lựa chọn mô hình
 
 ```yaml
 selected_model: "qwen-math"
@@ -155,43 +155,43 @@ plugins_applied:
   - hallucination: "Enabled for fact verification"
 ```
 
-### Result
+### Kết quả
 
-- **Accurate**: Routed to math specialist
-- **Fast**: Checked cache first
-- **Safe**: Verified no jailbreak attempts
-- **High-quality**: Hallucination detection enabled
+- **Chính xác**: Định tuyến tới chuyên gia toán
+- **Nhanh**: Kiểm tra bộ nhớ đệm trước tiên
+- **An toàn**: Xác minh không có nỗ lực jailbreak
+- **Chất lượng cao**: Phát hiện ảo tưởng được bật
 
-**This is collective intelligence**: No single component made the decision. The intelligence emerged from the collaboration of signals, rules, models, and plugins.
+**Đây là collective intelligence**: Không có thành phần nào đơn lẻ đưa ra quyết định. Trí thông minh xuất hiện từ sự hợp tác của các tín hiệu, quy tắc, mô hình và plugin.
 
-## Benefits of Collective Intelligence
+## Lợi ích của Collective Intelligence
 
-### 1. Better Accuracy
+### 1. Độ chính xác tốt hơn
 
-- Multiple signals reduce false positives
-- Specialized models perform better in their domains
-- Signal fusion catches edge cases
+- Nhiều tín hiệu giảm dương tính giả
+- Các mô hình chuyên biệt hoạt động tốt hơn trong lĩnh vực của chúng
+- Hợp nhất tín hiệu bắt được các trường hợp cạnh
 
-### 2. Improved Robustness
+### 2. Mạnh mẽ được cải thiện
 
-- System continues working even if one signal fails
-- Multiple security layers provide defense in depth
-- Fallback mechanisms ensure reliability
+- Hệ thống tiếp tục hoạt động ngay cả khi một tín hiệu gặp sự cố
+- Nhiều lớp bảo mật cung cấp bảo vệ theo độ sâu
+- Các cơ chế dự phòng đảm bảo độ tin cậy
 
-### 3. Continuous Learning
+### 3. Học tập liên tục
 
-- System learns from patterns across all interactions
-- Feedback signals improve future routing
-- Collective knowledge grows over time
+- Hệ thống học từ các mẫu trên tất cả các tương tác
+- Các tín hiệu phản hồi cải thiện định tuyến trong tương lai
+- Kiến thức tập thể phát triển theo thời gian
 
-### 4. Emergent Capabilities
+### 4. Khả năng xuất hiện
 
-- System can handle cases no single component was designed for
-- New patterns emerge from signal combinations
-- Intelligence scales with system complexity
+- Hệ thống có thể xử lý các trường hợp mà không có thành phần nào được thiết kế
+- Các mẫu mới xuất hiện từ các kết hợp tín hiệu
+- Trí thông minh tỷ lệ với sự phức tạp của hệ thống
 
-## Next Steps
+## Bước tiếp theo
 
-- [What is Signal-Driven Decision?](signal-driven-decisions.md) - Deep dive into the decision engine
-- [Configuration Guide](../installation/configuration.md) - Set up your own collective intelligence system
-- [Intelligent Route Tutorials](../tutorials/intelligent-route/keyword-routing.md) - Learn to configure signals
+- [Signal-Driven Decision là gì?](signal-driven-decisions.md) - Tìm hiểu sâu về công cụ quyết định
+- [Hướng dẫn cấu hình](../installation/configuration.md) - Thiết lập hệ thống collective intelligence của riêng bạn
+- [Hướng dẫn định tuyến thông minh](../tutorials/intelligent-route/keyword-routing.md) - Tìm hiểu cách cấu hình tín hiệu

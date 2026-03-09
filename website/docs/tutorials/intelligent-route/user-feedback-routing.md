@@ -1,35 +1,35 @@
-# User Feedback Signal Routing
+# Định tuyến Dựa trên Tín hiệu Phản hồi Người dùng
 
-This guide shows you how to route requests based on user feedback and satisfaction signals. The user_feedback signal helps identify follow-up messages, corrections, and satisfaction levels.
+Hướng dẫn này hướng dẫn bạn cách định tuyến các yêu cầu dựa trên phản hồi và tín hiệu mức độ hài lòng của người dùng. Tín hiệu user_feedback giúp xác định các tin nhắn theo dõi, các sửa chữa và mức độ hài lòng.
 
-## Key Advantages
+## Lợi ích chính
 
-- **Adaptive Routing**: Detect when users are unsatisfied and route to better models
-- **Correction Handling**: Automatically handle "that's wrong" and "try again" messages
-- **Satisfaction Analysis**: Identify positive vs negative feedback
-- **Improved UX**: Provide better responses when users indicate dissatisfaction
+- **Định tuyến thích ứng**: Phát hiện khi người dùng không hài lòng và định tuyến đến các mô hình tốt hơn
+- **Xử lý sửa chữa**: Tự động xử lý các tin nhắn "điều đó là sai" và "thử lại"
+- **Phân tích mức độ hài lòng**: Xác định phản hồi tích cực so với tiêu cực
+- **Cải thiện trải nghiệm người dùng**: Cung cấp các phản hồi tốt hơn khi người dùng chỉ ra sự không hài lòng
 
-## What Problem Does It Solve?
+## Vấn đề nó giải quyết là gì?
 
-Users often provide feedback in follow-up messages:
+Người dùng thường cung cấp phản hồi trong các tin nhắn theo dõi:
 
-- **Corrections**: "That's wrong", "No, that's not what I meant"
-- **Satisfaction**: "Thank you", "That's helpful", "Perfect"
-- **Clarifications**: "Can you explain more?", "I don't understand"
-- **Retries**: "Try again", "Give me another answer"
+- **Sửa chữa**: "Điều đó là sai", "Không, đó không phải những gì tôi có ý"
+- **Mức độ hài lòng**: "Cảm ơn", "Điều đó hữu ích", "Hoàn hảo"
+- **Làm rõ**: "Bạn có thể giải thích thêm không?", "Tôi không hiểu"
+- **Thử lại**: "Thử lại", "Cho tôi một câu trả lời khác"
 
-The user_feedback signal automatically identifies these patterns, allowing you to:
+Tín hiệu user_feedback tự động xác định các mẫu này, cho phép bạn:
 
-1. Route corrections to more capable models
-2. Detect satisfaction levels for monitoring
-3. Handle follow-up questions appropriately
-4. Improve response quality based on feedback
+1. Định tuyến các sửa chữa đến các mô hình có khả năng hơn
+2. Phát hiện mức độ hài lòng để giám sát
+3. Xử lý các câu hỏi theo dõi một cách thích hợp
+4. Cải thiện chất lượng phản hồi dựa trên phản hồi
 
-## Configuration
+## Cấu hình
 
-### Basic Configuration
+### Cấu hình cơ bản
 
-Define user feedback signals in your `config.yaml`:
+Xác định các tín hiệu phản hồi người dùng trong `config.yaml` của bạn:
 
 ```yaml
 signals:
@@ -47,7 +47,7 @@ signals:
       description: "User wants some other different answer"
 ```
 
-### Use in Decision Rules
+### Sử dụng trong các Quy tắc Quyết định
 
 ```yaml
 decisions:
@@ -84,11 +84,11 @@ decisions:
           system_prompt: "The user wants a different approach or perspective. Provide an alternative solution or explanation that differs from the previous response."
 ```
 
-## Feedback Types
+## Các loại Phản hồi
 
-### 1. Wrong Answer
+### 1. Câu trả lời sai
 
-**Patterns**: "That's wrong", "No", "Incorrect", "Try again"
+**Mẫu**: "Điều đó là sai", "Không", "Không chính xác", "Thử lại"
 
 ```yaml
 signals:
@@ -114,15 +114,15 @@ decisions:
           system_prompt: "The user has indicated that the previous answer was incorrect. Please carefully reconsider the question and provide a corrected answer."
 ```
 
-**Example Queries**:
+**Truy vấn ví dụ**:
 
-- "That's wrong, the answer is 42" → ✅ Correction detected
-- "No, that's not what I meant" → ✅ Correction detected
-- "Try again with a different approach" → ✅ Correction detected
+- "Điều đó là sai, câu trả lời là 42" → ✅ Phát hiện sửa chữa
+- "Không, đó không phải những gì tôi có ý" → ✅ Phát hiện sửa chữa
+- "Thử lại với một cách tiếp cận khác" → ✅ Phát hiện sửa chữa
 
-### 2. Satisfied
+### 2. Hài lòng
 
-**Patterns**: "Thank you", "Perfect", "That's helpful", "Great"
+**Mẫu**: "Cảm ơn", "Hoàn hảo", "Điều đó hữu ích", "Tuyệt vời"
 
 ```yaml
 signals:
@@ -148,15 +148,15 @@ decisions:
           system_prompt: "The user is satisfied. Continue providing helpful assistance."
 ```
 
-**Example Queries**:
+**Truy vấn ví dụ**:
 
-- "Thank you, that's exactly what I needed" → ✅ Satisfaction detected
-- "Perfect, that helps a lot" → ✅ Satisfaction detected
-- "Great explanation" → ✅ Satisfaction detected
+- "Cảm ơn, đó chính xác là những gì tôi cần" → ✅ Phát hiện mức độ hài lòng
+- "Hoàn hảo, điều đó giúp rất nhiều" → ✅ Phát hiện mức độ hài lòng
+- "Giải thích tuyệt vời" → ✅ Phát hiện mức độ hài lòng
 
-### 3. Need Clarification
+### 3. Cần làm rõ
 
-**Patterns**: "Can you explain more?", "I don't understand", "What do you mean?"
+**Mẫu**: "Bạn có thể giải thích thêm không?", "Tôi không hiểu", "Bạn có ý gì?"
 
 ```yaml
 signals:
@@ -182,15 +182,15 @@ decisions:
           system_prompt: "The user needs more clarification. Provide a more detailed, step-by-step explanation with examples."
 ```
 
-**Example Queries**:
+**Truy vấn ví dụ**:
 
-- "Can you explain that in simpler terms?" → ✅ Clarification needed
-- "I don't understand the last part" → ✅ Clarification needed
-- "What do you mean by that?" → ✅ Clarification needed
+- "Bạn có thể giải thích điều đó bằng những thuật ngữ đơn giản hơn không?" → ✅ Cần làm rõ
+- "Tôi không hiểu phần cuối cùng" → ✅ Cần làm rõ
+- "Bạn có ý gì?" → ✅ Cần làm rõ
 
-### 4. Want Different Approach
+### 4. Muốn cách tiếp cận khác
 
-**Patterns**: "Give me another answer", "Try a different way", "Show me alternatives"
+**Mẫu**: "Cho tôi một câu trả lời khác", "Thử một cách khác", "Chỉ cho tôi những lựa chọn thay thế"
 
 ```yaml
 signals:
@@ -216,17 +216,17 @@ decisions:
           system_prompt: "The user wants a different approach or perspective. Provide an alternative solution or explanation that differs from the previous response."
 ```
 
-**Example Queries**:
+**Truy vấn ví dụ**:
 
-- "Give me another way to solve this" → ✅ Alternative wanted
-- "Show me a different approach" → ✅ Alternative wanted
-- "Can you try a different method?" → ✅ Alternative wanted
+- "Cho tôi một cách khác để giải quyết vấn đề này" → ✅ Muốn cách tiếp cận khác
+- "Chỉ cho tôi một cách khác" → ✅ Muốn cách tiếp cận khác
+- "Bạn có thể thử một phương pháp khác không?" → ✅ Muốn cách tiếp cận khác
 
-## Use Cases
+## Các trường hợp sử dụng
 
-### 1. Customer Support - Escalation
+### 1. Hỗ trợ khách hàng - Nâng cao
 
-**Problem**: Unsatisfied customers need better responses
+**Vấn đề**: Khách hàng không hài lòng cần các phản hồi tốt hơn
 
 ```yaml
 signals:
@@ -252,9 +252,9 @@ decisions:
           system_prompt: "The customer was not satisfied with the previous answer. Provide a better, more accurate response."
 ```
 
-### 2. Education - Adaptive Learning
+### 2. Giáo dục - Học tập thích ứng
 
-**Problem**: Students need different explanations when confused
+**Vấn đề**: Sinh viên cần các giải thích khác nhau khi bị nhầm lẫn
 
 ```yaml
 signals:
@@ -280,11 +280,11 @@ decisions:
           system_prompt: "The student needs more clarification. Provide a detailed, step-by-step explanation with examples."
 ```
 
-## Best Practices
+## Các thực hành tốt nhất
 
-### 1. Combine with Context
+### 1. Kết hợp với Ngữ cảnh
 
-Use conversation history to improve detection:
+Sử dụng lịch sử trò chuyện để cải thiện phát hiện:
 
 ```yaml
 # Track conversation state
@@ -293,9 +293,9 @@ context:
   conversation_history: 3  # Last 3 messages
 ```
 
-### 2. Set Escalation Priorities
+### 2. Đặt Ưu tiên Nâng cao
 
-Corrections should have high priority:
+Các sửa chữa nên có ưu tiên cao:
 
 ```yaml
 decisions:
@@ -303,9 +303,9 @@ decisions:
     priority: 100  # High priority for corrections
 ```
 
-### 3. Monitor Satisfaction Rates
+### 3. Giám sát Tỷ lệ Hài lòng
 
-Track feedback patterns:
+Theo dõi các mẫu phản hồi:
 
 ```yaml
 logging:
@@ -314,12 +314,12 @@ logging:
   satisfaction_metrics: true
 ```
 
-### 4. Use Appropriate Models
+### 4. Sử dụng các Mô hình Thích hợp
 
-- **Corrections**: Route to more capable/expensive models
-- **Clarifications**: Route to models good at explanations
-- **Satisfaction**: Continue with current model
+- **Sửa chữa**: Định tuyến đến các mô hình có khả năng/tốn kém hơn
+- **Làm rõ**: Định tuyến đến các mô hình tốt tại các giải thích
+- **Mức độ hài lòng**: Tiếp tục với mô hình hiện tại
 
-## Reference
+## Tham chiếu
 
-See [Signal-Driven Decision Architecture](../../overview/signal-driven-decisions.md) for complete signal architecture.
+Xem [Signal-Driven Decision Architecture](../../overview/signal-driven-decisions.md) để biết kiến trúc tín hiệu hoàn chỉnh.

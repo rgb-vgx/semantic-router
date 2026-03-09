@@ -1,35 +1,35 @@
-# Domain Based Routing
+# Định tuyến Dựa trên Miền
 
-This guide shows you how to use fine-tuned classification models for intelligent routing based on academic and professional domains. Domain routing uses specialized models (ModernBERT, Qwen3-Embedding, EmbeddingGemma) with LoRA adapters to classify queries into categories like math, physics, law, business, and more.
+Hướng dẫn này hướng dẫn bạn cách sử dụng các mô hình phân loại tinh chỉnh cho định tuyến thông minh dựa trên các miền học thuật và chuyên nghiệp. Định tuyến miền sử dụng các mô hình chuyên biệt (ModernBERT, Qwen3-Embedding, EmbeddingGemma) với các bộ điều chỉnh LoRA để phân loại truy vấn thành các danh mục như toán học, vật lý, pháp lý, kinh doanh, v.v.
 
-## Key Advantages
+## Lợi ích chính
 
-- **Efficient**: Fine-tuned models with LoRA adapters provide fast inference (5-20ms) with high accuracy
-- **Specialized**: Multiple model options (ModernBERT for English, Qwen3 for multilingual/long-context, Gemma for small footprint)
-- **Multi-task**: LoRA enables running multiple classification tasks (domain + PII + jailbreak) with shared base model
-- **Cost-effective**: Lower latency than LLM-based classification, no API costs
+- **Hiệu quả**: Các mô hình tinh chỉnh với các bộ điều chỉnh LoRA cung cấp suy luận nhanh (5-20ms) với độ chính xác cao
+- **Chuyên biệt**: Tùy chọn mô hình đa (ModernBERT cho tiếng Anh, Qwen3 cho đa ngôn ngữ/ngữ cảnh dài, Gemma cho dấu chân nhỏ)
+- **Đa nhiệm vụ**: LoRA cho phép chạy nhiều tác vụ phân loại (miền + PII + jailbreak) với mô hình cơ sở được chia sẻ
+- **Hiệu quả chi phí**: Độ trễ thấp hơn so với phân loại dựa trên LLM, không có chi phí API
 
-## What Problem Does It Solve?
+## Vấn đề nó giải quyết là gì?
 
-Generic classification approaches struggle with domain-specific terminology and nuanced differences between academic/professional fields. Domain routing provides:
+Các cách tiếp cận phân loại chung gặp khó khăn với thuật ngữ cụ thể cho miền và sự khác biệt tinh tế giữa các trường học tập/chuyên nghiệp. Định tuyến miền cung cấp:
 
-- **Accurate domain detection**: Fine-tuned models distinguish between math, physics, chemistry, law, business, etc.
-- **Multi-task efficiency**: LoRA adapters enable simultaneous domain classification, PII detection, and jailbreak detection with one base model pass
-- **Long-context support**: Qwen3-Embedding handles up to 32K tokens (vs ModernBERT's 8K limit)
-- **Multilingual routing**: Qwen3 trained on 100+ languages, ModernBERT optimized for English
-- **Resource optimization**: Expensive reasoning only enabled for domains that benefit (math, physics, chemistry)
+- **Phát hiện miền chính xác**: Các mô hình tinh chỉnh phân biệt giữa toán học, vật lý, hóa học, pháp lý, kinh doanh, v.v.
+- **Hiệu quả đa nhiệm vụ**: Các bộ điều chỉnh LoRA cho phép đồng thời phân loại miền, phát hiện PII và phát hiện jailbreak với một lượt mô hình cơ sở
+- **Hỗ trợ ngữ cảnh dài**: Qwen3-Embedding xử lý tới 32K mã thông báo (so với giới hạn 8K của ModernBERT)
+- **Định tuyến đa ngôn ngữ**: Qwen3 được huấn luyện trên 100+ ngôn ngữ, ModernBERT được tối ưu hóa cho tiếng Anh
+- **Tối ưu hóa tài nguyên**: Suy luận tốn kém chỉ được bật cho các miền được hưởng lợi (toán học, vật lý, hóa học)
 
-## When to Use
+## Khi nào sử dụng
 
-- **Educational platforms** with diverse subject areas (STEM, humanities, social sciences)
-- **Professional services** requiring domain expertise (legal, medical, financial)
-- **Enterprise knowledge bases** spanning multiple departments
-- **Research assistance** tools needing academic domain awareness
-- **Multi-domain products** where classification accuracy is critical
+- **Nền tảng giáo dục** có các khu vực đối tượng đa dạng (STEM, nhân văn, khoa học xã hội)
+- **Dịch vụ chuyên nghiệp** yêu cầu chuyên môn về lĩnh vực (pháp lý, y tế, tài chính)
+- **Các cơ sở kiến thức doanh nghiệp** kéo dài trên nhiều phòng ban
+- **Công cụ hỗ trợ nghiên cứu** cần nhận thức về miền học tập
+- **Các sản phẩm đa miền** nơi độ chính xác phân loại rất quan trọng
 
-## Configuration
+## Cấu hình
 
-Configure the domain classifier in your `config.yaml`:
+Cấu hình bộ phân loại miền trong `config.yaml` của bạn:
 
 ```yaml
 # Define domain signals
@@ -183,22 +183,22 @@ decisions:
           similarity_threshold: 0.85
 ```
 
-## Supported Domains
+## Các Miền Được Hỗ trợ
 
-Academic: math, physics, chemistry, biology, computer science, engineering
+Học tập: toán học, vật lý, hóa học, sinh học, khoa học máy tính, kỹ thuật
 
-Professional: business, law, economics, health, psychology
+Chuyên nghiệp: kinh doanh, pháp luật, kinh tế, sức khỏe, tâm lý học
 
-General: philosophy, history, other
+Chung: triết học, lịch sử, khác
 
-## Features
+## Tính năng
 
-- **PII Detection**: Automatically detects and handles sensitive information
-- **Semantic Caching**: Cache similar queries for faster responses
-- **Reasoning Control**: Enable/disable reasoning per domain
-- **Custom Thresholds**: Adjust cache sensitivity per category
+- **Phát hiện PII**: Tự động phát hiện và xử lý thông tin nhạy cảm
+- **Bộ nhớ đệm ngữ nghĩa**: Lưu các truy vấn tương tự để phản hồi nhanh hơn
+- **Kiểm soát suy luận**: Bật/tắt suy luận cho mỗi miền
+- **Ngưỡng tùy chỉnh**: Điều chỉnh độ nhạy bộ nhớ đệm theo danh mục
 
-## Example Requests
+## Ví dụ Yêu cầu
 
 ```bash
 # Math query (reasoning enabled)
@@ -226,41 +226,41 @@ curl -X POST http://localhost:8801/v1/chat/completions \
   }'
 ```
 
-## Real-World Use Cases
+## Các trường hợp sử dụng thực tế
 
-### 1. Multi-Task Classification with LoRA (Efficient)
+### 1. Phân loại Đa nhiệm vụ với LoRA (Hiệu quả)
 
-**Problem**: Need domain classification + PII detection + jailbreak detection on every request
-**Solution**: LoRA adapters run all 3 tasks with one base model pass instead of 3 separate models
-**Impact**: 3x faster than running 3 full models, &lt;1% parameter overhead per task
+**Vấn đề**: Cần phân loại miền + phát hiện PII + phát hiện jailbreak trên mỗi yêu cầu
+**Giải pháp**: Các bộ điều chỉnh LoRA chạy cả 3 tác vụ với một lượt mô hình cơ sở thay vì 3 mô hình riêng biệt
+**Tác động**: nhanh hơn 3x so với chạy 3 mô hình đầy đủ, <1% chi phí tham số cho mỗi tác vụ
 
-### 2. Long Document Analysis (Specialized - Qwen3)
+### 2. Phân tích Tài liệu Dài (Qwen3 Chuyên biệt)
 
-**Problem**: Research papers and legal documents exceed 8K token limit of ModernBERT
-**Solution**: Qwen3-Embedding supports up to 32K tokens without truncation
-**Impact**: Accurate classification on full documents, no information loss from truncation
+**Vấn đề**: Tài liệu/tài liệu pháp lý nghiên cứu vượt quá giới hạn 8K mã thông báo của ModernBERT
+**Giải pháp**: Qwen3-Embedding hỗ trợ tới 32K mã thông báo mà không cần cắt cụt
+**Tác động**: Phân loại chính xác trên tài liệu đầy đủ, không mất thông tin do cắt cụt
 
-### 3. Multilingual Education Platform (Specialized - Qwen3)
+### 3. Nền tảng Giáo dục Đa ngôn ngữ (Qwen3 Chuyên biệt)
 
-**Problem**: Students ask questions in 100+ languages, ModernBERT limited to English
-**Solution**: Qwen3-Embedding trained on 100+ languages handles multilingual routing
-**Impact**: Single model serves global users, consistent quality across languages
+**Vấn đề**: Sinh viên hỏi câu hỏi bằng 100+ ngôn ngữ, ModernBERT giới hạn tiếng Anh
+**Giải pháp**: Qwen3-Embedding được huấn luyện trên 100+ ngôn ngữ xử lý định tuyến đa ngôn ngữ
+**Tác động**: Mô hình duy nhất phục vụ người dùng toàn cầu, chất lượng nhất quán trên các ngôn ngữ
 
-### 4. Edge Deployment (Specialized - Gemma)
+### 4. Triển khai Edge (Gemma Chuyên biệt)
 
-**Problem**: Mobile/IoT devices can't run large classification models
-**Solution**: EmbeddingGemma-300M with Matryoshka embeddings (128-768 dims)
-**Impact**: 5x smaller model, runs on edge devices with &lt;100MB memory
+**Vấn đề**: Các thiết bị di động/IoT không thể chạy các mô hình phân loại lớn
+**Giải pháp**: EmbeddingGemma-300M với nhúng Matryoshka (128-768 dims)
+**Tác động**: Mô hình nhỏ hơn 5 lần, chạy trên các thiết bị edge với <100MB bộ nhớ
 
-### 5. STEM Tutoring Platform (Efficient Reasoning Control)
+### 5. Nền tảng Gia sư STEM (Kiểm soát Suy luận Hiệu quả)
 
-**Problem**: Math/physics need reasoning, but history/literature don't
-**Solution**: Domain classifier routes STEM → reasoning models, humanities → fast models
-**Impact**: 2x better STEM accuracy, 60% cost savings on non-STEM queries
+**Vấn đề**: Toán/vật lý cần suy luận, nhưng lịch sử/văn học thì không
+**Giải pháp**: Bộ phân loại miền định tuyến STEM → mô hình suy luận, nhân văn → mô hình nhanh
+**Tác động**: Độ chính xác STEM tốt hơn 2x, tiết kiệm chi phí 60% trên truy vấn không STEM
 
-## Domain-Specific Optimizations
+## Tối ưu hóa Cụ thể cho Miền
 
-### STEM Domains (Reasoning Enabled)
+### Miền STEM (Suy luận Được bật)
 
 ```yaml
 decisions:
@@ -313,7 +313,7 @@ decisions:
         system_prompt: "You are a chemistry expert. Explain reaction mechanisms clearly."
 ```
 
-### Professional Domains (PII + Caching)
+### Miền Chuyên nghiệp (PII + Bộ nhớ đệm)
 
 ```yaml
 decisions:
@@ -354,7 +354,7 @@ decisions:
         system_prompt: "You are a knowledgeable legal expert."
 ```
 
-### General Domains (Fast + Cached)
+### Miền Chung (Nhanh + Bộ nhớ đệm)
 
 ```yaml
 decisions:
@@ -392,25 +392,25 @@ decisions:
         similarity_threshold: 0.75  # Relaxed
 ```
 
-## Performance Characteristics
+## Đặc điểm Hiệu suất
 
-| Domain | Reasoning | Cache Threshold | Avg Latency | Use Case |
+| Miền | Suy luận | Ngưỡng Bộ nhớ đệm | Độ trễ Trung bình | Trường hợp sử dụng |
 |--------|-----------|-----------------|-------------|----------|
-| Math | ✅ | 0.85 | 2-5s | Step-by-step solutions |
-| Physics | ✅ | 0.85 | 2-5s | Derivations |
-| Chemistry | ✅ | 0.85 | 2-5s | Mechanisms |
-| Health | ❌ | 0.95 | 500ms | Safety-critical |
-| Law | ❌ | 0.85 | 500ms | Compliance |
-| Business | ❌ | 0.80 | 300ms | Fast insights |
-| Other | ❌ | 0.75 | 200ms | General queries |
+| Toán học | ✅ | 0.85 | 2-5 giây | Giải pháp từng bước |
+| Vật lý | ✅ | 0.85 | 2-5 giây | Đạo hàm |
+| Hóa học | ✅ | 0.85 | 2-5 giây | Cơ chế |
+| Sức khỏe | ❌ | 0.95 | 500ms | Quan trọng về an toàn |
+| Pháp luật | ❌ | 0.85 | 500ms | Tuân thủ |
+| Kinh doanh | ❌ | 0.80 | 300ms | Thông tin chi tiết nhanh |
+| Khác | ❌ | 0.75 | 200ms | Truy vấn chung |
 
-## Cost Optimization Strategy
+## Chiến lược Tối ưu hóa Chi phí
 
-1. **Reasoning Budget**: Enable only for STEM (30% of queries) → 60% cost reduction
-2. **Caching Strategy**: High threshold for sensitive domains → 70% hit rate
-3. **Model Selection**: Lower scores for low-value domains → cheaper models
-4. **PII Detection**: Only for health/law → reduced processing overhead
+1. **Ngân sách Suy luận**: Chỉ bật cho STEM (30% truy vấn) → giảm chi phí 60%
+2. **Chiến lược Bộ nhớ đệm**: Ngưỡng cao cho các miền nhạy cảm → tỷ lệ hit 70%
+3. **Lựa chọn Mô hình**: Điểm thấp hơn cho các miền giá trị thấp → mô hình rẻ hơn
+4. **Phát hiện PII**: Chỉ cho sức khỏe/pháp lý → chi phí xử lý giảm
 
-## Reference
+## Tham chiếu
 
-See [bert_classification.yaml](https://github.com/vllm-project/semantic-router/blob/main/config/intelligent-routing/in-tree/bert_classification.yaml) for complete configuration.
+Xem [bert_classification.yaml](https://github.com/vllm-project/semantic-router/blob/main/config/intelligent-routing/in-tree/bert_classification.yaml) để xem cấu hình hoàn chỉnh.

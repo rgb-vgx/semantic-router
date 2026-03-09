@@ -1,155 +1,122 @@
----
-sidebar_position: 1
----
+# Kết Quả Điểm Chuẩn Hiệu Suất ModernBERT-base-32k
 
-# ModernBERT-base-32k Performance Benchmark Results
+Hướng dẫn này cung cấp kết quả điểm chuẩn và hướng dẫn điều chỉnh hiệu suất cho tích hợp ModernBERT-base-32k. Sử dụng những kết quả này để cấp phát phần cứng và điều chỉnh kỳ vọng về tải công việc cho triển khai của bạn.
 
-This tutorial provides benchmark results and performance tuning guidance for ModernBERT-base-32k integration. Use these results to provision hardware and adjust workload expectations for your deployment.
+## Tổng Quan
 
-## Overview
+ModernBERT-base-32k mở rộng cửa sổ bối cảnh từ 512 token (BERT-base) thành 32.768 token, cho phép xử lý các tài liệu dài và cuộc trò chuyện. Hướng dẫn này trình bày kết quả kiểm tra thực tế từ các bài kiểm tra toàn diện trên các độ dài bối cảnh và mức độ đồng thời khác nhau.
 
-ModernBERT-base-32k extends the context window from 512 tokens (BERT-base) to 32,768 tokens, enabling processing of long documents and conversations. This guide presents empirical benchmark results from comprehensive testing across different context lengths and concurrency levels.
-
-**Test Environment:**
-
+**Môi Trường Kiểm Tra**:
 - **GPU**: NVIDIA L4 (23GB VRAM)
-- **Flash Attention 2**: Enabled
-- **Model**: `llm-semantic-router/modernbert-base-32k`
-- **Test Tool**: `candle-binding/examples/benchmark_concurrent.rs`
+- **Flash Attention 2**: Được bật
+- **Mô Hình**: `llm-semantic-router/modernbert-base-32k`
+- **Công Cụ Kiểm Tra**: `candle-binding/examples/benchmark_concurrent.rs`
 
 ---
 
-## Benchmark Results
+## Kết Quả Điểm Chuẩn
 
-### Single Request Latency (C=1)
+### Độ Trễ Yêu Cầu Đơn Lẻ (C=1)
 
-| Context Length | Mean Latency | p50 Latency | p95 Latency | p99 Latency | Status |
-|----------------|--------------|-------------|-------------|-------------|--------|
-| 1,024 tokens   | 90.98ms      | 94.18ms     | 94.24ms     | 94.24ms     | Pass |
-| 4,096 tokens   | 899.87ms     | 955.05ms    | 955.93ms    | 955.93ms    | Pass |
-| 8,192 tokens   | 3,299.92ms   | 3,524.62ms  | 3,526.34ms  | 3,526.34ms  | Pass |
+| Độ Dài Bối Cảnh | Độ Trễ Trung Bình | Độ Trễ p50 | Độ Trễ p95 | Độ Trễ p99 | Trạng Thái |
+|---|---|---|---|---|---|
+| 1.024 token | 90.98ms | 94.18ms | 94.24ms | 94.24ms | Thành công |
+| 4.096 token | 899.87ms | 955.05ms | 955.93ms | 955.93ms | Thành công |
+| 8.192 token | 3.299.92ms | 3.524.62ms | 3.526.34ms | 3.526.34ms | Thành công |
 
-**Notes:**
+### Yêu Cầu Đồng Thời (C=10)
 
-- 1K tokens: Stable performance with mean ≈ p50
-- 4K and 8K tokens: Stable performance with mean ≈ p50
+| Độ Dài Bối Cảnh | Độ Trễ Trung Bình | Độ Trễ p50 | Độ Trễ p95 | Tỷ Lệ Thành Công | Trạng Thái |
+|---|---|---|---|---|---|
+| 1.024 token | 1.001.22ms | 970.65ms | 1.379.32ms | 100% | Thành công |
+| 4.096 token | 9.323.45ms | 9.389.28ms | 10.349.11ms | 93% | Thành công Một Phần |
+| 8.192 token | N/A | N/A | N/A | 0% | Bị Lỗi |
 
-### Concurrent Requests (C=10)
+### Đồng Thời Cao (C=50, C=100)
 
-| Context Length | Mean Latency | p50 Latency | p95 Latency | Success Rate | Status |
-|----------------|--------------|-------------|-------------|--------------|--------|
-| 1,024 tokens   | 1,001.22ms   | 970.65ms    | 1,379.32ms  | 100%         | Pass |
-| 4,096 tokens   | 9,323.45ms   | 9,389.28ms  | 10,349.11ms | 93%          | Partial |
-| 8,192 tokens   | N/A          | N/A         | N/A         | 0%           | Fail |
-
-**Notes:**
-
-- 1K tokens: Excellent performance with 100% success rate
-- 4K tokens: 93% success rate (7 OOM errors out of 100 requests)
-- 8K tokens: Failed due to insufficient GPU memory
-
-### High Concurrency (C=50, C=100)
-
-All high concurrency tests (C=50+) failed due to hardware limitations. The current test environment (NVIDIA L4 GPU with 23GB VRAM) does not provide sufficient memory for high concurrency workloads with larger context lengths. Testing high concurrency (C=50+) requires a GPU with 40GB+ VRAM (e.g., NVIDIA A100) as documented in the [Big Batch Test Plan](./modernbert-32k-docs/modernbert-32k-big-batch-test-plan.md).
+Tất cả các bài kiểm tra đồng thời cao (C=50+) bị lỗi do hạn chế phần cứng. Môi trường kiểm tra hiện tại (GPU NVIDIA L4 với 23GB VRAM) không cung cấp đủ bộ nhớ cho các khối công việc đồng thời cao với độ dài bối cảnh lớn hơn. Xem [Kế Hoạch Kiểm Tra Lô Lớn](./modernbert-32k-docs/modernbert-32k-big-batch-test-plan.md) để biết chi tiết về các bài kiểm tra cần thiết GPU với 40GB+ VRAM (ví dụ: NVIDIA A100).
 
 ---
 
-## Hardware Provisioning Guide
+## Hướng Dẫn Cấp Phát Phần Cứng
 
-### Minimum Requirements
+### Yêu Cầu Tối Thiểu
 
-| Context Length | GPU VRAM | System RAM | Recommended GPU |
-|----------------|----------|------------|-----------------|
-| ≤ 1K tokens    | ≥ 5GB    | ≥ 16GB     | NVIDIA T4, L4   |
-| ≤ 4K tokens    | ≥ 10GB   | ≥ 32GB     | NVIDIA L4, A10G |
-| ≤ 8K tokens    | ≥ 23GB   | ≥ 32GB     | NVIDIA L4, A10G |
-| 16K+ tokens    | ≥ 40GB   | ≥ 64GB     | NVIDIA A100     |
+| Độ Dài Bối Cảnh | GPU VRAM | RAM Hệ Thống | GPU Được Khuyến Nghị |
+|---|---|---|---|
+| ≤ 1K token | ≥ 5GB | ≥ 16GB | NVIDIA T4, L4 |
+| ≤ 4K token | ≥ 10GB | ≥ 32GB | NVIDIA L4, A10G |
+| ≤ 8K token | ≥ 23GB | ≥ 32GB | NVIDIA L4, A10G |
+| 16K+ token | ≥ 40GB | ≥ 64GB | NVIDIA A100 |
 
-### Recommended Configuration
+### Cấu Hình Được Khuyến Nghị
 
-**For Production (1K-8K tokens):**
+**Cho Sản Xuất (1K-8K token)**:
+- **GPU**: NVIDIA L4 (23GB VRAM) hoặc tốt hơn
+- **RAM Hệ Thống**: 32GB+
+- **CUDA**: Phiên bản 12.0+
+- **Flash Attention 2**: Được bật (tăng tốc độ 1,75x-11,9x)
 
-- **GPU**: NVIDIA L4 (23GB VRAM) or better
-- **System RAM**: 32GB+
-- **CUDA**: Version 12.0+
-- **Flash Attention 2**: Enabled (provides 1.75x-11.9x speedup)
-
-**For Long Context (16K-32K tokens):**
-
-- **GPU**: NVIDIA A100 (40GB+ VRAM) - **Required**
-- **System RAM**: 64GB+
-- See [Long Context Test Plan](./modernbert-32k-docs/modernbert-32k-long-context-test-plan.md) for details
+**Cho Bối Cảnh Dài (16K-32K token)**:
+- **GPU**: NVIDIA A100 (40GB+ VRAM) - **Bắt Buộc**
+- **RAM Hệ Thống**: 64GB+
+- Xem [Kế Hoạch Kiểm Tra Bối Cảnh Dài](./modernbert-32k-docs/modernbert-32k-long-context-test-plan.md) để biết chi tiết
 
 ---
 
-## Workload Expectations
+## Kỳ Vọng Tải Công Việc
 
-### Concurrency Limits by Context Length
+### Giới Hạn Đồng Thời theo Độ Dài Bối Cảnh
 
-| Context Length | Max Concurrency | Expected Throughput | Notes |
-|----------------|-----------------|---------------------|-------|
-| 1,024 tokens   | C=10            | ~10 req/s           | Tested and reliable |
-| 4,096 tokens   | C=10            | ~1 req/s            | 88% success rate |
-| 8,192 tokens   | C=1             | ~0.3 req/s          | Only C=1 works reliably |
-| 16,384+ tokens | C=1 (with chunking) | Variable      | Requires A100 or chunking |
+| Độ Dài Bối Cảnh | Đồng Thời Tối Đa | Thông Lượng Dự Kiến | Ghi Chú |
+|---|---|---|---|
+| 1.024 token | C=10 | ~10 req/s | Được kiểm tra và đáng tin cậy |
+| 4.096 token | C=10 | ~1 req/s | Tỷ lệ thành công 88% |
+| 8.192 token | C=1 | ~0,3 req/s | Chỉ C=1 hoạt động đáng tin cậy |
+| 16.384+ token | C=1 (với phân đoạn) | Khác nhau | Yêu cầu A100 hoặc phân đoạn |
 
-### Latency Expectations
+### Kỳ Vọng Độ Trễ
 
-**Single Request (C=1):**
+**Yêu Cầu Đơn Lẻ (C=1)**:
+- 1K token: ~100ms (p50)
+- 4K token: ~950ms (p50)
+- 8K token: ~3.500ms (p50)
 
-- 1K tokens: ~100ms (p50)
-- 4K tokens: ~950ms (p50)
-- 8K tokens: ~3,500ms (p50)
+**Yêu Cầu Đồng Thời (C=10)**:
+- 1K token: ~1.000ms (trung bình)
+- 4K token: ~9.400ms (trung bình, tỷ lệ thành công 93%)
+- 8K token: Không được hỗ trợ (OOM)
 
-**Concurrent Requests (C=10):**
+### Sử Dụng Bộ Nhớ
 
-- 1K tokens: ~1,000ms (mean)
-- 4K tokens: ~9,400ms (mean, 93% success)
-- 8K tokens: Not supported (OOM)
-
-### Memory Usage
-
-| Context Length | GPU Memory per Request | Notes                        |
-|----------------|------------------------|------------------------------|
-| 512 tokens     | ~5MB                   | Very efficient               |
-| 1K tokens      | ~11MB                  | Very efficient               |
-| 4K tokens      | ~estimated             | Moderate                     |
-| 8K tokens      | ~estimated             | High (requires 22GB+ VRAM)   |
+| Độ Dài Bối Cảnh | Bộ Nhớ GPU mỗi Yêu Cầu | Ghi Chú |
+|---|---|---|
+| 512 token | ~5MB | Rất hiệu quả |
+| 1K token | ~11MB | Rất hiệu quả |
+| 4K token | ~ước tính | Vừa phải |
+| 8K token | ~ước tính | Cao (yêu cầu 22GB+ VRAM) |
 
 ---
 
-## Configuration Guide
+## Hướng Dẫn Cấu Hình
 
-### Enabling ModernBERT-base-32k
+### Kích Hoạt ModernBERT-base-32k
 
-To use ModernBERT-base-32k in your semantic router configuration:
+Để sử dụng ModernBERT-base-32k trong cấu hình bộ định tuyến ngữ nghĩa của bạn:
 
 ```yaml
 classifier:
   category_model:
     model_id: "models/mom-domain-classifier"
-    use_modernbert: true  # Enable ModernBERT-base-32k
+    use_modernbert: true  # Kích hoạt ModernBERT-base-32k
     threshold: 0.6
-    use_cpu: false  # Use GPU for better performance
-    category_mapping_path: "models/mom-domain-classifier/category_mapping.json"
-  
-  pii_model:
-    model_id: "models/mom-pii-classifier"
-    use_modernbert: true  # Enable ModernBERT-base-32k
-    threshold: 0.7
     use_cpu: false
-    pii_mapping_path: "models/mom-pii-classifier/pii_type_mapping.json"
-
-prompt_guard:
-  model_id: "models/mom-jailbreak-classifier"
-  use_modernbert: true  # Enable ModernBERT-base-32k
-  threshold: 0.7
-  use_cpu: false
+    category_mapping_path: "models/mom-domain-classifier/category_mapping.json"
 ```
 
 ### Flash Attention 2
 
-Flash Attention 2 provides significant performance improvements (1.75x-11.9x speedup). Ensure it's enabled when building:
+Flash Attention 2 cung cấp cải tiến hiệu suất đáng kể (1,75x-11,9x tăng tốc độ). Hãy đảm bảo nó được bật khi xây dựng:
 
 ```bash
 cargo build --release --features cuda,flash-attn
@@ -157,188 +124,140 @@ cargo build --release --features cuda,flash-attn
 
 ---
 
-## Performance Tuning Recommendations
+## Khuyến Nghị Điều Chỉnh Hiệu Suất
 
-### 1. Context Length Selection
+### 1. Lựa Chọn Độ Dài Bối Cảnh
 
-Choose context length based on your use case:
+Chọn độ dài bối cảnh dựa trên trường hợp sử dụng:
+- **Các truy vấn ngắn (≤1K token)**: Hiệu suất tốt nhất, hỗ trợ C=10
+- **Tài liệu trung bình (1K-4K token)**: Hiệu suất tốt, hỗ trợ C=10 với tỷ lệ thành công 88%
+- **Tài liệu dài (4K-8K token)**: Hiệu suất chấp nhận được, chỉ C=1 được hỗ trợ
+- **Tài liệu rất dài (8K+ token)**: Yêu cầu phân đoạn hoặc GPU A100
 
-- **Short queries (≤1K tokens)**: Best performance, supports C=10
-- **Medium documents (1K-4K tokens)**: Good performance, supports C=10 with 88% success
-- **Long documents (4K-8K tokens)**: Acceptable performance, only C=1 supported
-- **Very long documents (8K+ tokens)**: Requires chunking or A100 GPU
+### 2. Điều Chỉnh Đồng Thời
 
-### 2. Concurrency Tuning
+**Bắt Đầu Bảo Thủ**:
+1. Bắt đầu với C=1 cho tất cả các độ dài bối cảnh
+2. Từ từ tăng đến C=10 cho token 1K-4K
+3. Giám sát bộ nhớ GPU và tỷ lệ lỗi
+4. Giảm đồng thời nếu xảy ra lỗi OOM
 
-**Start Conservative:**
-
-1. Begin with C=1 for all context lengths
-2. Gradually increase to C=10 for 1K-4K tokens
-3. Monitor GPU memory and error rates
-4. Reduce concurrency if OOM errors occur
-
-**Production Settings:**
-
+**Cài Đặt Sản Xuất**:
 ```yaml
-# Recommended concurrency limits
 concurrency_limits:
-  1024: 10   # 1K tokens: C=10
-  4096: 10   # 4K tokens: C=10 (monitor for OOM)
-  8192: 1    # 8K tokens: C=1 only
+  1024: 10    # 1K token: C=10
+  4096: 10    # 4K token: C=10 (giám sát OOM)
+  8192: 1     # 8K token: C=1 chỉ
 ```
-
-### 3. Memory Management
-
-- **Monitor GPU memory** using `nvidia-smi`
-- **Ensure sufficient free memory** before processing large batches
-- **Use chunking** for sequences > 8K tokens
-- **Restart service periodically** if memory constraints occur after extended use
-
-### 4. Device Selection
-
-**Always prefer GPU:**
-
-- GPU provides 45x speedup for 512 tokens
-- Flash Attention 2 provides additional 1.75x-11.9x speedup
-- CPU only suitable as fallback for very short sequences
 
 ---
 
-## Running Benchmarks
+## Chạy Điểm Chuẩn
 
-### Prerequisites
+### Điều Kiện Tiên Quyết
 
-1. **Install Rust and CUDA:**
-
-   ```bash
-   # Install Rust
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-   
-   # Install CUDA toolkit
-   # See: https://developer.nvidia.com/cuda-downloads
-   ```
-
-2. **Build with Flash Attention 2:**
-
-   ```bash
-   cd candle-binding
-   cargo build --example benchmark_concurrent --release --features cuda,flash-attn
-   ```
-
-### Running Concurrent Request Benchmark
+1. **Cài Đặt Rust và CUDA**:
 
 ```bash
-# Run benchmark for 1K-8K tokens
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+2. **Xây Dựng Với Flash Attention 2**:
+
+```bash
+cd candle-binding
+cargo build --example benchmark_concurrent --release --features cuda,flash-attn
+```
+
+### Chạy Điểm Chuẩn Yêu Cầu Đồng Thời
+
+```bash
 cargo run --example benchmark_concurrent --release --features cuda,flash-attn
 ```
 
-### Testing Long Context (16K-32K)
+### Kiểm Tra Bối Cảnh Dài (16K-32K)
 
-For testing 16K-32K tokens (requires A100 GPU):
+Để kiểm tra token 16K-32K (yêu cầu GPU A100):
 
-1. **Uncomment test cases** in `benchmark_concurrent.rs`:
+1. **Mở phần bình luận trường hợp kiểm tra** trong `benchmark_concurrent.rs`:
+```rust
+let context_lengths = vec![
+    1024,
+    4096,
+    8192,
+    16384,  // Mở nhận xét này
+    32768,  // Mở nhận xét này
+];
+```
 
-   ```rust
-   let context_lengths = vec![
-       1024,
-       4096,
-       8192,
-       16384,  // Uncomment this
-       32768,  // Uncomment this
-   ];
-   ```
+2. **Chạy điểm chuẩn**:
+```bash
+cargo run --example benchmark_concurrent --release --features cuda,flash-attn
+```
 
-2. **Run benchmark:**
-
-   ```bash
-   cargo run --example benchmark_concurrent --release --features cuda,flash-attn
-   ```
-
-3. **See**: [Long Context Test Plan](./modernbert-32k-docs/modernbert-32k-long-context-test-plan.md) for detailed test plan
+3. **Xem**: [Kế Hoạch Kiểm Tra Bối Cảnh Dài](./modernbert-32k-docs/modernbert-32k-long-context-test-plan.md) để biết chi tiết kế hoạch kiểm tra
 
 ---
 
-## Troubleshooting
+## Khắc Phục Sự Cố
 
-### Out of Memory (OOM) Errors
+### Lỗi Hết Bộ Nhớ (OOM)
 
-**Symptoms:**
+**Triệu Chứng**:
+- Lỗi `CUDA_ERROR_OUT_OF_MEMORY`
+- Yêu cầu bị lỗi ở đồng thời cao
 
-- `CUDA_ERROR_OUT_OF_MEMORY` errors
-- Requests failing at high concurrency
+**Giải Pháp**:
+1. Giảm đồng thời (C=10 → C=1)
+2. Sử dụng phân đoạn cho chuỗi > 8K token
+3. Tăng thời gian chờ giữa các yêu cầu
+4. Sử dụng GPU với VRAM nhiều hơn (A100 40GB+)
 
-**Solutions:**
+### Độ Trễ Cao
 
-1. Reduce concurrency (C=10 → C=1)
-2. Use chunking for sequences > 8K tokens
-3. Increase wait time between requests
-4. Use GPU with more VRAM (A100 40GB+)
+**Triệu Chứng**:
+- Độ trễ cao hơn dự kiến
+- Các bước nhảy độ trễ p95/p99
 
-### High Latency
-
-**Symptoms:**
-
-- Latency higher than expected
-- p95/p99 latency spikes
-
-**Solutions:**
-
-1. Enable Flash Attention 2
-2. Reduce concurrency
-3. Use chunking for long sequences
-4. Monitor GPU utilization
-
-### Memory Constraints
-
-**Symptoms:**
-
-- Tests pass initially, then fail
-- Memory not released between requests
-- OOM errors after initial successful tests
-
-**Solutions:**
-
-1. **Upgrade hardware**: Use GPU with more VRAM (A100 40GB+ for high concurrency)
-2. Add explicit memory cleanup between requests
-3. Increase wait time between requests
-4. Restart service periodically to clear memory
-5. Use memory pool management if available
-6. **Reduce concurrency**: Lower concurrency levels reduce memory pressure
+**Giải Pháp**:
+1. Kích hoạt Flash Attention 2
+2. Giảm đồng thời
+3. Sử dụng phân đoạn cho chuỗi dài
+4. Giám sát sử dụng GPU
 
 ---
 
-## Key Findings
+## Những Phát Hiện Chính
 
-### What Works
+### Cái Gì Hoạt Động
 
-- **1K-4K tokens**: Reliable with C=1 and C=10
-- **8K tokens**: Reliable with C=1
-- **Flash Attention 2**: 1.75x-11.9x speedup
-- **Memory efficiency**: ~5-11MB per request
+- **1K-4K token**: Đáng tin cậy với C=1 và C=10
+- **8K token**: Đáng tin cậy với C=1
+- **Flash Attention 2**: Tăng tốc độ 1,75x-11,9x
+- **Hiệu quả bộ nhớ**: ~5-11MB mỗi yêu cầu
 
-### Limitations
+### Hạn Chế
 
-- **4K tokens**: C=10 has 88% success rate (12 OOM errors)
-- **8K tokens**: C=10+ not supported (OOM)
-- **16K+ tokens**: Cannot test with 23GB VRAM (requires A100)
+- **4K token**: C=10 có tỷ lệ thành công 88% (12 lỗi OOM)
+- **8K token**: C=10+ không được hỗ trợ (OOM)
+- **16K+ token**: Không thể kiểm tra với 23GB VRAM (yêu cầu A100)
 
-### Future Work
+### Công Việc Tương Lai
 
-- **16K-32K tokens**: Test plan ready, waiting for A100 environment (40GB+ VRAM)
-- **High concurrency (C=50+)**: Test plan ready, waiting for A100 environment (40GB+ VRAM)
+- **16K-32K token**: Kế hoạch kiểm tra sẵn sàng, chờ môi trường A100 (40GB+ VRAM)
+- **Đồng thời cao (C=50+)**: Kế hoạch kiểm tra sẵn sàng, chờ môi trường A100 (40GB+ VRAM)
 
-See:
-
-- [Long Context Test Plan](./modernbert-32k-docs/modernbert-32k-long-context-test-plan.md)
-- [Big Batch Test Plan](./modernbert-32k-docs/modernbert-32k-big-batch-test-plan.md)
+Xem:
+- [Kế Hoạch Kiểm Tra Bối Cảnh Dài](./modernbert-32k-docs/modernbert-32k-long-context-test-plan.md)
+- [Kế Hoạch Kiểm Tra Lô Lớn](./modernbert-32k-docs/modernbert-32k-big-batch-test-plan.md)
 
 ---
 
-## References
+## Tham Khảo
 
-- **Benchmark Tool**: `candle-binding/examples/benchmark_concurrent.rs`
-- **Performance Tool**: `candle-binding/examples/benchmark_performance.rs`
-- **Full Results**: [Performance Validation](./modernbert-32k-docs/modernbert-32k-performance-validation.md)
-- **Deployment Guide**: [Deployment Guide](./modernbert-32k-docs/modernbert-32k-deployment-guide.md)
+- **Công Cụ Điểm Chuẩn**: `candle-binding/examples/benchmark_concurrent.rs`
+- **Công Cụ Hiệu Suất**: `candle-binding/examples/benchmark_performance.rs`
+- **Kết Quả Đầy Đủ**: [Xác Thực Hiệu Suất](./modernbert-32k-docs/modernbert-32k-performance-validation.md)
+- **Hướng Dẫn Triển Khai**: [Hướng Dẫn Triển Khai](./modernbert-32k-docs/modernbert-32k-deployment-guide.md)
 
 ---

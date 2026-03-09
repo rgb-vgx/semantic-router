@@ -1,54 +1,54 @@
-# Choosing a Selection Algorithm
+# Chọn Thuật Toán Lựa Chọn
 
-This guide helps you select the right model selection algorithm for your use case.
+Hướng dẫn này giúp bạn chọn thuật toán lựa chọn mô hình phù hợp cho trường hợp sử dụng của bạn.
 
-## Quick Decision Tree
+## Cây Ra Quyết Định Nhanh
 
 ```
-Do you need deterministic routing?
-├── Yes → Static Selection
-└── No → Continue...
+Bạn có cần định tuyến xác định không?
+├── Có → Lựa Chọn Tĩnh
+└── Không → Tiếp tục...
 
-Do you have user feedback available?
-├── Yes, abundant → Elo Rating
-├── Some feedback → Hybrid (with Elo component)
-└── No feedback → Continue...
+Bạn có sẵn phản hồi người dùng không?
+├── Có, dồi dào → Xếp Hạng Elo
+├── Có phản hồi → Hybrid (với thành phần Elo)
+└── Không có phản hồi → Tiếp tục...
 
-Do you have good model descriptions?
-├── Yes → RouterDC
-└── No → Continue...
+Bạn có mô tả mô hình tốt không?
+├── Có → RouterDC
+└── Không → Tiếp tục...
 
-Is cost optimization important?
-├── Yes → AutoMix
-└── No → Static or Hybrid
+Tối ưu hóa chi phí có quan trọng không?
+├── Có → AutoMix
+└── Không → Tĩnh hoặc Hybrid
 ```
 
-## Algorithm Comparison
+## So Sánh Thuật Toán
 
-### Core Algorithms
+### Các Thuật Toán Cơ Bản
 
-| Algorithm | Feedback Needed | Setup Complexity | Adaptability | Cost Optimization |
+| Thuật Toán | Cần Phản Hồi | Độ Phức Tạp Cấu Hình | Khả Năng Thích Ứng | Tối Ưu Hóa Chi Phí |
 |-----------|-----------------|------------------|--------------|-------------------|
-| Static | None | Low | None | Manual |
-| Elo | High | Medium | High | Indirect |
-| RouterDC | None | Medium | Medium | No |
-| AutoMix | Low | Medium | Medium | Yes |
-| Hybrid | Varies | High | High | Yes |
+| Tĩnh | Không | Thấp | Không | Thủ công |
+| Elo | Cao | Trung bình | Cao | Gián tiếp |
+| RouterDC | Không | Trung bình | Trung bình | Không |
+| AutoMix | Thấp | Trung bình | Trung bình | Có |
+| Hybrid | Thay đổi | Cao | Cao | Có |
 
-### RL-Driven Algorithms
+### Các Thuật Toán Được Điều Khiển Bởi RL
 
-| Algorithm | Feedback Needed | Setup Complexity | Adaptability | Personalization |
+| Thuật Toán | Cần Phản Hồi | Độ Phức Tạp Cấu Hình | Khả Năng Thích Ứng | Cá Nhân Hóa |
 |-----------|-----------------|------------------|--------------|-----------------|
-| Thompson | Medium | Low | High | Per-user option |
-| GMTRouter | Medium | High | Very High | Built-in |
-| Router-R1 | None | High | High | Via LLM |
+| Thompson | Trung bình | Thấp | Cao | Tùy Chọn Cho Mỗi Người Dùng |
+| GMTRouter | Trung bình | Cao | Rất Cao | Tích Hợp |
+| Router-R1 | Không | Cao | Cao | Qua LLM |
 
-## Use Case Recommendations
+## Khuyến Nghị Trường Hợp Sử Dụng
 
-### Startup / MVP
-**Recommended: Static**
+### Khởi Động / MVP
+**Được Khuyến Nghị: Tĩnh**
 
-Start simple with explicit rules. Migrate to adaptive methods as you collect data.
+Bắt đầu đơn giản với các quy tắc rõ ràng. Chuyển sang các phương pháp thích ứng khi bạn thu thập dữ liệu.
 
 ```yaml
 algorithm:
@@ -57,10 +57,10 @@ algorithm:
     default_model: gpt-3.5-turbo
 ```
 
-### High-Volume Production
-**Recommended: AutoMix or Hybrid**
+### Sản Xuất Khối Lượng Lớn
+**Được Khuyến Nghị: AutoMix hoặc Hybrid**
 
-Optimize costs while maintaining quality at scale.
+Tối ưu hóa chi phí trong khi duy trì chất lượng quy mô.
 
 ```yaml
 algorithm:
@@ -69,10 +69,10 @@ algorithm:
     cost_quality_tradeoff: 0.4
 ```
 
-### User-Facing Applications
-**Recommended: Elo**
+### Ứng Dụng Hướng Người Dùng
+**Được Khuyến Nghị: Elo**
 
-Let user feedback drive model selection for subjective quality.
+Cho phép phản hồi người dùng xác định lựa chọn mô hình cho chất lượng chủ quan.
 
 ```yaml
 algorithm:
@@ -82,10 +82,10 @@ algorithm:
     storage_path: /data/elo-ratings.json
 ```
 
-### Specialized Domains
-**Recommended: RouterDC**
+### Lĩnh Vực Chuyên Biệt
+**Được Khuyến Nghị: RouterDC**
 
-When models have distinct specializations, match queries to model capabilities.
+Khi các mô hình có các chuyên môn riêng biệt, hãy khớp các truy vấn với khả năng mô hình.
 
 ```yaml
 algorithm:
@@ -94,10 +94,10 @@ algorithm:
     require_descriptions: true
 ```
 
-### Enterprise / Multi-objective
-**Recommended: Hybrid**
+### Doanh Nghiệp / Nhiều Mục Tiêu
+**Được Khuyến Nghị: Hybrid**
 
-Balance multiple factors: quality, cost, user satisfaction, and specialization.
+Cân bằng nhiều yếu tố: chất lượng, chi phí, sự hài lòng người dùng và chuyên môn.
 
 ```yaml
 algorithm:
@@ -109,10 +109,10 @@ algorithm:
     cost_weight: 0.2
 ```
 
-### Personalized Multi-User Platforms
-**Recommended: Thompson Sampling or GMTRouter**
+### Nền Tảng Đa Người Dùng Được Cá Nhân Hóa
+**Được Khuyến Nghị: Thompson Sampling hoặc GMTRouter**
 
-Learn individual user preferences over time.
+Tìm hiểu các ưu tiên người dùng riêng lẻ theo thời gian.
 
 ```yaml
 algorithm:
@@ -122,10 +122,10 @@ algorithm:
     min_samples: 10
 ```
 
-### Research / Complex Routing Logic
-**Recommended: Router-R1**
+### Nghiên Cứu / Logic Định Tuyến Phức Tạp
+**Được Khuyến Nghị: Router-R1**
 
-When routing decisions require semantic understanding that's hard to encode in rules.
+Khi các quyết định định tuyến yêu cầu sự hiểu biết ngữ nghĩa khó mã hóa trong các quy tắc.
 
 ```yaml
 algorithm:
@@ -135,46 +135,46 @@ algorithm:
     use_cot: true
 ```
 
-## Migration Path
+## Đường Dẫn Di Cư
 
-A typical progression as your system matures:
+Một tiến trình điển hình khi hệ thống của bạn trưởng thành:
 
-1. **Start**: Static selection with simple rules
-2. **Add feedback**: Migrate to Elo as you collect user feedback
-3. **Add descriptions**: Add RouterDC for query-model matching
-4. **Optimize cost**: Incorporate AutoMix for cost efficiency
-5. **Combine**: Use Hybrid to leverage all methods
+1. **Bắt đầu**: Lựa chọn tĩnh với các quy tắc đơn giản
+2. **Thêm phản hồi**: Di cư đến Elo khi bạn thu thập phản hồi người dùng
+3. **Thêm mô tả**: Thêm RouterDC để khớp truy vấn-mô hình
+4. **Tối ưu hóa chi phí**: Kết hợp AutoMix để hiệu quả chi phí
+5. **Kết hợp**: Sử dụng Hybrid để tận dụng tất cả các phương pháp
 
-## Key Considerations
+## Những Cân Nhắc Chính
 
-### Data Requirements
+### Yêu Cầu Dữ Liệu
 
-- **Static**: No data needed
-- **Elo**: Needs consistent user feedback (thumbs up/down)
-- **RouterDC**: Needs quality model descriptions
-- **AutoMix**: Needs accurate pricing and quality scores
-- **Hybrid**: Combination of above
-- **Thompson**: Needs feedback; works online
-- **GMTRouter**: Benefits from interaction history; can pre-train
-- **Router-R1**: Needs router LLM server; model descriptions help
+- **Tĩnh**: Không cần dữ liệu
+- **Elo**: Cần phản hồi người dùng nhất quán (cái cộc/cái trừ)
+- **RouterDC**: Cần mô tả mô hình chất lượng
+- **AutoMix**: Cần giá chính xác và điểm chất lượng
+- **Hybrid**: Kết hợp của những điều trên
+- **Thompson**: Cần phản hồi; hoạt động trực tuyến
+- **GMTRouter**: Được hưởng lợi từ lịch sử tương tác; có thể huấn luyện trước
+- **Router-R1**: Cần máy chủ LLM định tuyến; mô tả mô hình giúp
 
-### Latency Impact
+### Ảnh Hưởng Độ Trễ
 
-| Algorithm | Typical Latency |
+| Thuật Toán | Độ Trễ Điển Hình |
 |-----------|-----------------|
-| Static | Under 1ms |
-| Elo | Under 2ms |
-| RouterDC | 2-5ms (embedding) |
-| AutoMix | Under 3ms |
+| Tĩnh | Dưới 1ms |
+| Elo | Dưới 2ms |
+| RouterDC | 2-5ms (nhúng) |
+| AutoMix | Dưới 3ms |
 | Hybrid | 3-5ms |
-| Thompson | Under 2ms |
+| Thompson | Dưới 2ms |
 | GMTRouter | 5-15ms (GNN) |
 | Router-R1 | 100-500ms (LLM) |
 
-### Maintenance
+### Bảo Trì
 
-- **Static**: Manual rule updates
-- **Elo**: Self-maintaining with feedback
-- **RouterDC**: Update descriptions when models change
-- **AutoMix**: Update pricing when costs change
-- **Hybrid**: Periodic weight tuning recommended
+- **Tĩnh**: Cập nhật quy tắc thủ công
+- **Elo**: Tự duy trì với phản hồi
+- **RouterDC**: Cập nhật mô tả khi mô hình thay đổi
+- **AutoMix**: Cập nhật giá khi chi phí thay đổi
+- **Hybrid**: Điều chỉnh trọng số định kỳ được khuyến nghị

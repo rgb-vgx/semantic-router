@@ -1,34 +1,34 @@
-# Redis Cluster Storage for Response API
+# Lưu Trữ Cụm Redis Cho API Phản Hồi
 
-This guide covers **Redis Cluster** deployment for the Response API, providing high availability, automatic failover, and data sharding across multiple nodes.
+Hướng dẫn này bao gồm triển khai **Cụm Redis** cho API Phản Hồi, cung cấp tính sẵn sàng cao, chuyển đổi dự phòng tự động và sharding dữ liệu trên nhiều nút.
 
-> **Note:** For simple standalone Redis setup, see [Redis Storage Guide](redis-storage.md).
+> **Lưu ý:** Để thiết lập Redis độc lập đơn giản, hãy xem [Hướng dẫn Lưu Trữ Redis](redis-storage.md).
 
-## What is Redis Cluster?
+## Redis Cụm là gì?
 
-**Redis Cluster** provides:
+**Cụm Redis** cung cấp:
 
-- ✅ **Data sharding**: Automatically distributes data across multiple master nodes (16384 hash slots)
-- ✅ **High availability**: Automatic failover if a master fails (requires replicas)
-- ✅ **Horizontal scaling**: Add more nodes to increase capacity
-- ✅ **No single point of failure**: Data replicated across nodes
+- ✅ **Sharding dữ liệu**: Tự động phân phối dữ liệu trên nhiều nút chính (slot hash 16384)
+- ✅ **Tính sẵn sàng cao**: Chuyển đổi dự phòng tự động nếu một nút chính bị lỗi (cần bản sao)
+- ✅ **Mở rộng quy mô ngang hoàng**: Thêm nhiều nút hơn để tăng dung lượng
+- ✅ **Không có điểm lỗi duy nhất**: Dữ liệu được sao chép trên các nút
 
-**vs. Standalone Redis:**
+**so với Redis Độc lập:**
 
-- Standalone = 1 node, simple, good for dev/small deployments
-- Cluster = 6+ nodes (3 masters + 3 replicas), production-ready
+- Độc lập = 1 nút, đơn giản, tốt cho dev/triển khai nhỏ
+- Cụm = 6+ nút (3 chính + 3 bản sao), sẵn sàng cho sản xuất
 
-## Setup and Deployment
+## Thiết Lập và Triển Khai
 
-### 1. Start Redis Cluster
+### 1. Khởi Động Cụm Redis
 
-#### Step 1: Create Docker Network
+#### Bước 1: Tạo Mạng Docker
 
 ```bash
 docker network create redis-cluster-net
 ```
 
-#### Step 2: Start 6 Redis Nodes
+#### Bước 2: Khởi Động 6 Nút Redis
 
 ```bash
 for port in 7001 7002 7003 7004 7005 7006; do
@@ -45,13 +45,13 @@ for port in 7001 7002 7003 7004 7005 7006; do
 done
 ```
 
-**What this does:**
+**Cái này làm:**
 
-- Starts 6 independent Redis servers
-- Enables cluster mode on each
-- Ports 7001-7006 exposed on localhost
+- Khởi động 6 máy chủ Redis độc lập
+- Kích hoạt chế độ cụm trên mỗi máy
+- Cổng 7001-7006 được tiếp xúc trên localhost
 
-#### Step 3: Create the Cluster
+#### Bước 3: Tạo Cụm
 
 ```bash
 docker run --rm --network redis-cluster-net redis:7-alpine \
@@ -65,25 +65,25 @@ docker run --rm --network redis-cluster-net redis:7-alpine \
   --cluster-replicas 1 --cluster-yes
 ```
 
-**What this does:**
+**Cái này làm:**
 
-- Connects the 6 nodes into a cluster
-- Creates 3 masters (7001, 7002, 7003)
-- Creates 3 replicas (7004, 7005, 7006)
-- Distributes hash slots: 0-5460, 5461-10922, 10923-16383
+- Kết nối 6 nút vào một cụm
+- Tạo 3 chính (7001, 7002, 7003)
+- Tạo 3 bản sao (7004, 7005, 7006)
+- Phân phối slot hash: 0-5460, 5461-10922, 10923-16383
 
-#### Step 4: Verify Cluster is Running
+#### Bước 4: Xác Minh Cụm Đang Chạy
 
 ```bash
 docker exec redis-node-7001 redis-cli cluster info
 docker exec redis-node-7001 redis-cli cluster nodes
 ```
 
-### 2. Configure Semantic Router
+### 2. Cấu Hình Bộ Định Tuyến Ngữ Nghĩa
 
-#### Option 1: Inline Configuration
+#### Tùy Chọn 1: Cấu Hình Nội Tuyến
 
-Edit `config/config.yaml`:
+Chỉnh sửa `config/config.yaml`:
 
 ```yaml
 response_api:
@@ -99,16 +99,16 @@ response_api:
       - "127.0.0.1:7004"
       - "127.0.0.1:7005"
       - "127.0.0.1:7006"
-    db: 0  # MUST be 0 for cluster
+    db: 0  # PHẢI là 0 cho cụm
     key_prefix: "sr:"
-    pool_size: 20       # Higher for cluster
-    max_retries: 5      # More retries for redirects
-    dial_timeout: 10    # Longer for cluster
+    pool_size: 20       # Cao hơn cho cụm
+    max_retries: 5      # Nhiều lần thử lại hơn cho chuyên chuyển
+    dial_timeout: 10    # Lâu hơn cho cụm
 ```
 
-#### Option 2: External Config File
+#### Tùy Chọn 2: Tệp Cấu Hình Bên Ngoài
 
-Edit `config/config.yaml`:
+Chỉnh sửa `config/config.yaml`:
 
 ```yaml
 response_api:
@@ -119,31 +119,31 @@ response_api:
     config_path: "config/response-api/redis-cluster.yaml"
 ```
 
-Then edit `config/response-api/redis-cluster.yaml` with cluster addresses.
+Sau đó chỉnh sửa `config/response-api/redis-cluster.yaml` với địa chỉ cụm.
 
-### 3. Run Semantic Router
+### 3. Chạy Bộ Định Tuyến Ngữ Nghĩa
 
 ```bash
 make build-router
 make run-router
 ```
 
-### 4. Run EnvoyProxy
+### 4. Chạy EnvoyProxy
 
 ```bash
-# Start Envoy proxy
+# Bắt đầu proxy Envoy
 make run-envoy
 ```
 
-### 5. Verify Cluster Initialization
+### 5. Xác Minh Khởi Tạo Cụm
 
-**Check logs for cluster initialization:**
+**Kiểm tra nhật ký để khởi tạo cụm:**
 
 ```bash
 tail -f /tmp/router.log | grep -i "cluster\|redis"
 ```
 
-**Expected:**
+**Dự kiến:**
 
 ```
 RedisStore: creating cluster client (nodes=6, pool_size=20)
@@ -151,24 +151,24 @@ RedisStore: initialized successfully (cluster_mode=true, key_prefix=sr:, ttl=24h
 Response API enabled with redis backend
 ```
 
-### 6. Test Response API
+### 6. Kiểm Tra API Phản Hồi
 
-> **Note:** The examples below use `llm-katan` (Qwen3-0.6B) as the LLM backend. Adjust the `model` name to match your vLLM configuration.
+> **Lưu ý:** Các ví dụ dưới đây sử dụng `llm-katan` (Qwen3-0.6B) làm phụ trợ LLM. Điều chỉnh tên `model` để phù hợp với cấu hình vLLM của bạn.
 
-#### Test 1: Create Response
+#### Kiểm Tra 1: Tạo Phản Hồi
 
 ```bash
 curl -X POST http://localhost:8801/v1/responses \
   -H "Content-Type: application/json" \
   -d '{
     "model": "qwen3",
-    "input": "What is Redis Cluster?",
-    "instructions": "You are a database expert.",
+    "input": "Redis Cụm là gì?",
+    "instructions": "Bạn là một chuyên gia cơ sở dữ liệu.",
     "store": true
   }'
 ```
 
-**Response:**
+**Phản Hồi:**
 
 ```json
 {
@@ -180,9 +180,9 @@ curl -X POST http://localhost:8801/v1/responses \
 }
 ```
 
-#### Test 2: Verify Data Distribution
+#### Kiểm Tra 2: Xác Minh Phân Phối Dữ Liệu
 
-Check which node stores the data:
+Kiểm tra nút nào lưu trữ dữ liệu:
 
 ```bash
 for port in 7001 7002 7003 7004 7005 7006; do
@@ -191,7 +191,7 @@ for port in 7001 7002 7003 7004 7005 7006; do
 done
 ```
 
-**Example output:**
+**Đầu ra ví dụ:**
 
 ```
 === Node 7001 ===
@@ -203,42 +203,42 @@ sr:response:resp_bb63817af32280b4a3a8fb7f
 === Node 7004 ===
 
 === Node 7005 ===
-sr:response:resp_bb63817af32280b4a3a8fb7f  # Replica of 7001
+sr:response:resp_bb63817af32280b4a3a8fb7f  # Bản sao của 7001
 === Node 7006 ===
 ```
 
-**This shows:**
+**Cái này cho thấy:**
 
-- Master 7001 has the data (hash slot matched)
-- Replica 7005 has a copy (backup)
-- Other nodes are empty (different hash slots)
+- Chính 7001 có dữ liệu (slot hash phù hợp)
+- Bản sao 7005 có một bản sao (sao lưu)
+- Các nút khác trống (slot hash khác)
 
-#### Test 3: Retrieve Response
+#### Kiểm Tra 3: Truy Xuất Phản Hồi
 
 ```bash
 curl -X GET http://localhost:8801/v1/responses/resp_bb63817af32280b4a3a8fb7f
 ```
 
-**The client automatically:**
+**Máy khách tự động:**
 
-- Calculates hash slot for the key
-- Routes request to correct node (7001)
-- Handles MOVED redirects if needed
+- Tính slotslot hash cho khóa
+- Định tuyến yêu cầu đến nút chính (7001)
+- Xử lý chuyên chuyển MOVED nếu cần
 
-#### Test 4: Conversation Chaining
+#### Kiểm Tra 4: Xâu Chuỗi Cuộc Trò Chuyện
 
 ```bash
 curl -X POST http://localhost:8801/v1/responses \
   -H "Content-Type: application/json" \
   -d '{
     "model": "qwen3",
-    "input": "Tell me more about sharding",
+    "input": "Nói cho tôi thêm về sharding",
     "previous_response_id": "resp_bb63817af32280b4a3a8fb7f",
     "store": true
   }'
 ```
 
-**Response:**
+**Phản Hồi:**
 
 ```json
 {
@@ -249,44 +249,44 @@ curl -X POST http://localhost:8801/v1/responses \
 }
 ```
 
-#### Test 5: Delete Response
+#### Kiểm Tra 5: Xóa Phản Hồi
 
 ```bash
 curl -X DELETE http://localhost:8801/v1/responses/resp_bb63817af32280b4a3a8fb7f
 ```
 
-**Deletion works across cluster:**
+**Xóa hoạt động trên cụm:**
 
-- Client finds correct node
-- Deletes from master
-- Replica syncs automatically
+- Máy khách tìm nút chính
+- Xóa từ chính
+- Bản sao đồng bộ tự động
 
-## Cluster Monitoring
+## Giám Sát Cụm
 
-### Check Cluster Health
+### Kiểm Tra Sức Khỏe Cụm
 
 ```bash
 docker exec redis-node-7001 redis-cli cluster info
 ```
 
-**Key metrics:**
+**Số liệu chính:**
 
-- `cluster_state:ok` - Cluster is healthy
-- `cluster_slots_assigned:16384` - All slots assigned
-- `cluster_known_nodes:6` - All nodes discovered
+- `cluster_state:ok` - Cụm lành mạnh
+- `cluster_slots_assigned:16384` - Tất cả các slot được gán
+- `cluster_known_nodes:6` - Tất cả các nút được phát hiện
 
-### View Node Roles
+### Xem Các Vai Trò Nút
 
 ```bash
 docker exec redis-node-7001 redis-cli cluster nodes
 ```
 
-**Output shows:**
+**Đầu ra cho thấy:**
 
-- Master nodes with hash slot ranges
-- Replica nodes and which master they backup
+- Các nút chính với phạm vi slot hash
+- Các nút bản sao và nút chính nào họ sao lưu
 
-### Monitor Keys per Node
+### Giám Sát Khóa Trên Mỗi Nút
 
 ```bash
 for port in 7001 7002 7003; do
@@ -295,9 +295,9 @@ for port in 7001 7002 7003; do
 done
 ```
 
-## Cleanup
+## Dọn Dẹp
 
-### Stop and Remove All Nodes
+### Dừng và Xóa Tất Cả Các Nút
 
 ```bash
 for port in 7001 7002 7003 7004 7005 7006; do
@@ -308,8 +308,8 @@ done
 docker network rm redis-cluster-net
 ```
 
-## Reference
+## Tham Khảo
 
-- [Redis Storage (Standalone)](redis-storage.md) - Simple standalone setup
-- Configuration: `config/response-api/redis-cluster.yaml`
-- Integration tests: `pkg/responsestore/redis_store_integration_test.go`
+- [Redis Storage (Standalone)](redis-storage.md) - Thiết lập độc lập đơn giản
+- Cấu Hình: `config/response-api/redis-cluster.yaml`
+- Bài Kiểm Tra Tích Hợp: `pkg/responsestore/redis_store_integration_test.go`

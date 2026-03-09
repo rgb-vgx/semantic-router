@@ -1,33 +1,33 @@
-# Fact Check Signal Routing
+# Định tuyến Tín hiệu Kiểm tra Sự thật
 
-This guide shows you how to route requests based on whether they require fact verification. The fact_check signal helps identify factual queries that need hallucination detection or fact-checking.
+Hướng dẫn này hướng dẫn bạn cách định tuyến các yêu cầu dựa trên việc chúng có yêu cầu xác minh sự thật hay không. Tín hiệu fact_check giúp xác định các truy vấn thực tế cần phát hiện ảo giác hoặc kiểm tra sự thật.
 
-## Key Advantages
+## Lợi ích chính
 
-- **Automatic Detection**: ML-based detection of factual vs creative/code queries
-- **Hallucination Prevention**: Route factual queries to models with verification
-- **Resource Optimization**: Apply expensive fact-checking only when needed
-- **Compliance**: Ensure factual accuracy for regulated industries
+- **Phát hiện Tự động**: Phát hiện trên cơ sở ML các truy vấn thực tế so với sáng tạo/code
+- **Phòng chống Ảo giác**: Định tuyến các truy vấn thực tế đến các mô hình với xác minh
+- **Tối ưu hóa Tài nguyên**: Áp dụng kiểm tra sự thật tốn kém chỉ khi cần thiết
+- **Tuân thủ**: Đảm bảo độ chính xác thực tế cho các ngành được quản lý
 
-## What Problem Does It Solve?
+## Vấn đề nó giải quyết là gì?
 
-Not all queries require fact verification:
+Không phải tất cả các truy vấn đều yêu cầu xác minh sự thật:
 
-- **Factual queries**: "What is the capital of France?" → Needs verification
-- **Creative queries**: "Write a story about dragons" → No verification needed
-- **Code queries**: "Write a Python function" → No verification needed
+- **Truy vấn thực tế**: "Thủ đô của Pháp là gì?" → Cần xác minh
+- **Truy vấn sáng tạo**: "Viết một câu chuyện về rồng" → Không cần xác minh
+- **Truy vấn code**: "Viết một hàm Python" → Không cần xác minh
 
-The fact_check signal automatically identifies which queries need fact verification, allowing you to:
+Tín hiệu fact_check tự động xác định truy vấn nào cần xác minh sự thật, cho phép bạn:
 
-1. Route factual queries to models with hallucination detection
-2. Enable fact-checking plugins only for factual queries
-3. Optimize costs by avoiding unnecessary verification
+1. Định tuyến các truy vấn thực tế đến các mô hình với phát hiện ảo giác
+2. Bật các plugin kiểm tra sự thật chỉ cho các truy vấn thực tế
+3. Tối ưu hóa chi phí bằng cách tránh xác minh không cần thiết
 
-## Configuration
+## Cấu hình
 
-### Basic Configuration
+### Cấu hình cơ bản
 
-Define fact check signals in your `config.yaml`:
+Xác định các tín hiệu kiểm tra sự thật trong `config.yaml` của bạn:
 
 ```yaml
 signals:
@@ -39,7 +39,7 @@ signals:
       description: "Query is creative, code-related, or opinion-based - no fact verification needed"
 ```
 
-### Use in Decision Rules
+### Sử dụng trong các Quy tắc Quyết định
 
 ```yaml
 decisions:
@@ -64,11 +64,11 @@ decisions:
           threshold: 0.7
 ```
 
-## Use Cases
+## Các trường hợp sử dụng
 
-### 1. Healthcare - Medical Information
+### 1. Chăm sóc sức khỏe - Thông tin Y tế
 
-**Problem**: Medical queries must be factually accurate to avoid harm
+**Vấn đề**: Các truy vấn y tế phải chính xác thực tế để tránh gây hại
 
 ```yaml
 signals:
@@ -105,14 +105,14 @@ decisions:
           threshold: 0.8  # High threshold for medical
 ```
 
-**Example Queries**:
+**Truy vấn ví dụ**:
 
-- "What are the symptoms of diabetes?" → ✅ Routed with verification
-- "Write a story about a doctor" → ❌ Creative, no verification
+- "Các triệu chứng của bệnh tiểu đường là gì?" → ✅ Định tuyến với xác minh
+- "Viết một câu chuyện về một bác sĩ" → ❌ Sáng tạo, không cần xác minh
 
-### 2. Financial Services - Investment Information
+### 2. Dịch vụ Tài chính - Thông tin Đầu tư
 
-**Problem**: Financial advice must be accurate to comply with regulations
+**Vấn đề**: Lời khuyên tài chính phải chính xác để tuân thủ các quy định
 
 ```yaml
 signals:
@@ -150,14 +150,14 @@ decisions:
           threshold: 0.8
 ```
 
-**Example Queries**:
+**Truy vấn ví dụ**:
 
-- "What is the current P/E ratio of Apple?" → ✅ Factual, verified
-- "Explain investment strategies" → ❌ General advice, no verification
+- "Tỷ lệ P/E hiện tại của Apple là bao nhiêu?" → ✅ Thực tế, được xác minh
+- "Giải thích các chiến lược đầu tư" → ❌ Lời khuyên chung, không cần xác minh
 
-### 3. Education - Historical Facts
+### 3. Giáo dục - Sự thật Lịch sử
 
-**Problem**: Educational content must be factually accurate
+**Vấn đề**: Nội dung giáo dục phải chính xác thực tế
 
 ```yaml
 signals:
@@ -194,25 +194,25 @@ decisions:
           threshold: 0.7
 ```
 
-**Example Queries**:
+**Truy vấn ví dụ**:
 
-- "When did World War II end?" → ✅ Factual, verified
-- "Write a historical fiction story" → ❌ Creative, no verification
+- "Thế chiến thứ hai kết thúc khi nào?" → ✅ Thực tế, được xác minh
+- "Viết một câu chuyện lịch sử hư cấu" → ❌ Sáng tạo, không cần xác minh
 
-## Performance Characteristics
+## Đặc điểm Hiệu suất
 
-| Aspect | Value |
+| Khía cạnh | Giá trị |
 |--------|-------|
-| Latency | 20-50ms |
-| Accuracy | 80-90% |
-| False Positives | 5-10% (creative marked as factual) |
-| False Negatives | 5-10% (factual marked as creative) |
+| Độ trễ | 20-50ms |
+| Độ chính xác | 80-90% |
+| Dương tính giả | 5-10% (sáng tạo được đánh dấu thành thực tế) |
+| Âm tính giả | 5-10% (thực tế được đánh dấu thành sáng tạo) |
 
-## Best Practices
+## Các thực hành tốt nhất
 
-### 1. Combine with Domain Signals
+### 1. Kết hợp với Tín hiệu Miền
 
-Use both fact_check and domain signals for better accuracy:
+Sử dụng cả tín hiệu fact_check và domain để có độ chính xác tốt hơn:
 
 ```yaml
 rules:
@@ -224,9 +224,9 @@ rules:
       name: "needs_verification"
 ```
 
-### 2. Set Appropriate Priorities
+### 2. Đặt Ưu tiên Thích hợp
 
-Factual queries should have higher priority:
+Truy vấn thực tế nên có ưu tiên cao:
 
 ```yaml
 decisions:
@@ -239,9 +239,9 @@ decisions:
           name: "needs_verification"
 ```
 
-### 3. Enable Hallucination Detection
+### 3. Bật Phát hiện Ảo giác
 
-Always enable hallucination plugin for factual queries:
+Luôn bật plugin ảo giác cho các truy vấn thực tế:
 
 ```yaml
 plugins:
@@ -251,9 +251,9 @@ plugins:
       threshold: 0.7
 ```
 
-### 4. Monitor False Positives/Negatives
+### 4. Giám sát Dương tính giả/Âm tính giả
 
-Track queries that are misclassified:
+Theo dõi các truy vấn được phân loại sai:
 
 ```yaml
 logging:
@@ -261,6 +261,6 @@ logging:
   fact_check: true
 ```
 
-## Reference
+## Tham chiếu
 
-See [Signal-Driven Decision Architecture](../../overview/signal-driven-decisions.md) for complete signal architecture.
+Xem [Signal-Driven Decision Architecture](../../overview/signal-driven-decisions.md) để biết kiến trúc tín hiệu hoàn chỉnh.

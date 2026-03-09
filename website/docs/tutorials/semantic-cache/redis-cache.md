@@ -1,52 +1,52 @@
-# Redis Semantic Cache
+# Bộ Nhớ Đệm Ngữ Nghĩa Redis
 
-The Redis cache backend provides persistent, high-performance semantic caching using Redis Stack with RediSearch. This solution offers excellent performance with lower operational complexity compared to specialized vector databases.
+Bộ nhớ đệm Redis cung cấp bộ nhớ đệm ngữ nghĩa có hiệu suất cao, lâu dài bằng Redis Stack với RediSearch. Giải pháp này cung cấp hiệu suất tuyệt vời với độ phức tạp hoạt động thấp hơn so với các cơ sở dữ liệu vectơ chuyên biệt.
 
-## Overview
+## Tổng Quan
 
-Redis cache is ideal for:
+Bộ nhớ đệm Redis lý tưởng cho:
 
-- **Production environments** requiring fast response times
-- **Single-instance or clustered** Redis deployments
-- **Medium to large-scale applications** with efficient memory usage
-- **Persistent storage** with optional TTL expiration
-- **Simplified operations** with familiar Redis tooling
+- **Môi trường sản xuất** yêu cầu thời gian phản hồi nhanh
+- **Triển khai redis đơn lẻ hoặc được phân cụm**
+- **Ứng dụng quy mô vừa đến lớn** với sử dụng bộ nhớ hiệu quả
+- **Lưu trữ bền bỉ** với hết hạn TTL tùy chọn
+- **Vận hành được đơn giản hóa** bằng công cụ Redis quen thuộc
 
-## Architecture
+## Kiến Trúc
 
 ```mermaid
 graph TB
-    A[Client Request] --> B[Semantic Cache Instance 1]
-    A --> C[Semantic Cache Instance 2]
-    A --> D[Semantic Cache Instance N]
+    A[Yêu Cầu Khách Hàng] --> B[Thể Hiện Bộ Nhớ Đệm Ngữ Nghĩa 1]
+    A --> C[Thể Hiện Bộ Nhớ Đệm Ngữ Nghĩa 2]
+    A --> D[Thể Hiện Bộ Nhớ Đệm Ngữ Nghĩa N]
 
-    B --> E[Generate Query Embedding]
+    B --> E[Tạo Nhúng Truy Vấn]
     C --> E
     D --> E
 
     E --> F[Redis Stack + RediSearch]
-    F --> G{Similar Vector Found?}
+    F --> G{Tìm Thấy Vectơ Tương Tự?}
 
-    G -->|Hit| H[Return Cached Response]
-    G -->|Miss| I[Forward to LLM]
+    G -->|Chạm| H[Trả Lời Phản Hồi Cached]
+    G -->|Bỏ Lỡ| I[Chuyển Tiếp đến LLM]
 
-    I --> J[LLM Processing]
-    J --> K[Store Vector + Response in Redis]
-    J --> L[Return Response]
+    I --> J[Xử Lý LLM]
+    J --> K[Lưu Trữ Vectơ + Phản Hồi trong Redis]
+    J --> L[Trả Lời Phản Hồi]
 
-    K --> M[Persistent Storage with TTL]
-    H --> N[Update Hit Metrics]
+    K --> M[Lưu Trữ Bền Bỉ với TTL]
+    H --> N[Cập Nhật Số Liệu Nhấn]
 
     style H fill:#90EE90
     style K fill:#FFB6C1
     style M fill:#DDA0DD
 ```
 
-## Configuration
+## Cấu Hình
 
-### Redis Backend Configuration
+### Cấu Hình Backend Redis
 
-Configure in `config/semantic-cache/redis.yaml`:
+Cấu hình trong `config/semantic-cache/redis.yaml`:
 
 ```yaml
 # config/semantic-cache/redis.yaml
@@ -67,7 +67,7 @@ index:
   prefix: "doc:"
   vector_field:
     name: "embedding"
-    dimension: 384  # Must match embedding model dimension
+    dimension: 384  # Phải khớp với chiều mô hình nhúng
     algorithm: "HNSW"
     metric_type: "COSINE"
     hnsw:
@@ -83,24 +83,24 @@ development:
   log_level: "info"
 ```
 
-## Setup and Deployment
+## Cài Đặt và Triển Khai
 
-Start Redis Stack:
+Bắt đầu Redis Stack:
 
 ```bash
-# Using Docker
+# Sử dụng Docker
 make start-redis
 
-# Verify Redis is running
+# Xác minh Redis đang chạy
 docker exec redis-semantic-cache redis-cli PING
 ```
 
-### 2. Configure Semantic Router
+### 2. Cấu Hình Bộ Định Tuyến Ngữ Nghĩa
 
-Basic Redis Configuration:
+Cấu Hình Redis Cơ Bản:
 
-- Set `backend_type: "redis"` in `config/config.yaml`
-- Set `backend_config_path: "config/semantic-cache/redis.yaml"` in `config/config.yaml`
+- Đặt `backend_type: "redis"` trong `config/config.yaml`
+- Đặt `backend_config_path: "config/semantic-cache/redis.yaml"` trong `config/config.yaml`
 
 ```yaml
 # config/config.yaml
@@ -112,20 +112,20 @@ semantic_cache:
   ttl_seconds: 3600
 ```
 
-### Decision-Level Configuration (Plugin-Based)
+### Cấu Hình Cấp Quyết Định (Dựa Trên Plugin)
 
-You can also configure Redis cache at the decision level using plugins:
+Bạn cũng có thể cấu hình bộ nhớ đệm Redis ở cấp quyết định bằng các plugin:
 
 ```yaml
 signals:
   domains:
     - name: "math"
-      description: "Mathematical queries"
+      description: "Truy vấn toán học"
       mmlu_categories: ["math"]
 
 decisions:
   - name: math_route
-    description: "Route math queries with strict caching"
+    description: "Định tuyến truy vấn toán học với bộ nhớ đệm nghiêm ngặt"
     priority: 100
     rules:
       operator: "AND"
@@ -139,45 +139,45 @@ decisions:
       - type: "semantic-cache"
         configuration:
           enabled: true
-          similarity_threshold: 0.95  # Very strict for math accuracy
+          similarity_threshold: 0.95  # Rất nghiêm ngặt cho độ chính xác toán học
 ```
 
-Run Semantic Router:
+Chạy Bộ Định Tuyến Ngữ Nghĩa:
 
 ```bash
-# Start router
+# Bắt đầu router
 make run-router
 ```
 
-Run EnvoyProxy:
+Chạy EnvoyProxy:
 
 ```bash
-# Start Envoy proxy
+# Bắt đầu proxy Envoy
 make run-envoy
 ```
 
-### 4. Test Redis Cache
+### 4. Kiểm Thử Bộ Nhớ Đệm Redis
 
 ```bash
-# Send identical requests to see cache hits
+# Gửi các yêu cầu giống hệt nhau để xem các lần nhấn bộ nhớ đệm
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "MoM",
-    "messages": [{"role": "user", "content": "What is machine learning?"}]
+    "messages": [{"role": "user", "content": "Máy học là gì?"}]
   }'
 
-# Send similar request (should hit cache due to semantic similarity)
+# Gửi yêu cầu tương tự (nên chạm bộ nhớ đệm do tương đồng ngữ nghĩa)
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "MoM",
-    "messages": [{"role": "user", "content": "Explain machine learning"}]
+    "messages": [{"role": "user", "content": "Giải thích máy học"}]
   }'
 ```
 
-## Next Steps
+## Các Bước Tiếp Theo
 
-- **[Milvus Cache](./milvus-cache.md)** - Compare with Milvus vector database
-- **[In-Memory Cache](./in-memory-cache.md)** - Compare with in-memory caching
-- **[Observability](../observability/metrics.md)** - Monitor Redis performance
+- **[Bộ Nhớ Đệm Milvus](./milvus-cache.md)** - So sánh với cơ sở dữ liệu vectơ Milvus
+- **[Bộ Nhớ Đệm Trong Bộ Nhớ](./in-memory-cache.md)** - So sánh với bộ nhớ đệm trong bộ nhớ
+- **[Khả Năng Quan Sát](../observability/metrics.md)** - Theo dõi hiệu suất Redis

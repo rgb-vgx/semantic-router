@@ -1,14 +1,14 @@
-# Multi Turn Conversations
+# Các Cuộc trò chuyện Nhiều lượt
 
-Router Memory enables stateful conversations via the [OpenAI Response API](https://platform.openai.com/docs/api-reference/responses), supporting conversation chaining with `previous_response_id`.
+Router Memory cho phép các cuộc trò chuyện trạng thái được duy trì thông qua [OpenAI Response API](https://platform.openai.com/docs/api-reference/responses), hỗ trợ xâu chuỗi cuộc trò chuyện với `previous_response_id`.
 
-## Overview
+## Tổng quan
 
-Semantic Router acts as the **unified brain** for multiple LLM backends that only support the Chat Completions API. It provides:
+Semantic Router hoạt động như **bộ não thống nhất** cho nhiều phần mềm nền tảng LLM chỉ hỗ trợ Chat Completions API. Nó cung cấp:
 
-- **Cross-Model Stateful Conversations**: Maintain conversation history across different models
-- **Unified Response API**: Single API interface regardless of backend model
-- **Transparent Translation**: Automatic conversion between Response API and Chat Completions
+- **Cuộc trò chuyện Trạng thái Giữa các Mô hình**: Duy trì lịch sử trò chuyện trên các mô hình khác nhau
+- **API Phản hồi Thống nhất**: Giao diện API đơn lẻ bất kể mô hình phần mềm nền tảng
+- **Tự động Dịch Minh bạch**: Chuyển đổi tự động giữa Response API và Chat Completions
 
 ```mermaid
 flowchart TB
@@ -34,9 +34,9 @@ flowchart TB
     API --> M1 & M2 & M3 & M4
 ```
 
-With Router Memory, you can start a conversation with one model and continue it with another—the conversation history is preserved in the router, not in any single backend.
+Với Router Memory, bạn có thể bắt đầu một cuộc trò chuyện với một mô hình và tiếp tục nó với một mô hình khác - lịch sử trò chuyện được lưu trữ trong router, không phải trong bất kỳ phần mềm nền tảng nào.
 
-## Request Flow
+## Luồng Yêu cầu
 
 ```mermaid
 flowchart TB
@@ -74,16 +74,16 @@ flowchart TB
     B6 --> A1
 ```
 
-## Endpoints
+## Các Điểm cuối
 
-| Endpoint | Method | Description |
+| Điểm cuối | Phương pháp | Mô tả |
 |----------|--------|-------------|
-| `/v1/responses` | POST | Create a new response |
-| `/v1/responses/{id}` | GET | Retrieve a stored response |
-| `/v1/responses/{id}` | DELETE | Delete a stored response |
-| `/v1/responses/{id}/input_items` | GET | List input items for a response |
+| `/v1/responses` | POST | Tạo một phản hồi mới |
+| `/v1/responses/{id}` | GET | Truy xuất một phản hồi được lưu trữ |
+| `/v1/responses/{id}` | DELETE | Xóa một phản hồi được lưu trữ |
+| `/v1/responses/{id}/input_items` | GET | Liệt kê các mục nhập cho một phản hồi |
 
-## Configuration
+## Cấu hình
 
 ```yaml
 response_api:
@@ -93,9 +93,9 @@ response_api:
   max_responses: 1000
 ```
 
-## Usage
+## Cách sử dụng
 
-### 1. Create Response
+### 1. Tạo Phản hồi
 
 ```bash
 curl -X POST http://localhost:8801/v1/responses \
@@ -109,7 +109,7 @@ curl -X POST http://localhost:8801/v1/responses \
   }'
 ```
 
-Response:
+Phản hồi:
 
 ```json
 {
@@ -125,9 +125,9 @@ Response:
 }
 ```
 
-### 2. Continue Conversation
+### 2. Tiếp tục Cuộc trò chuyện
 
-Use `previous_response_id` to chain conversations:
+Sử dụng `previous_response_id` để xâu chuỗi cuộc trò chuyện:
 
 ```bash
 curl -X POST http://localhost:8801/v1/responses \
@@ -140,7 +140,7 @@ curl -X POST http://localhost:8801/v1/responses \
   }'
 ```
 
-Response:
+Phản hồi:
 
 ```json
 {
@@ -155,19 +155,19 @@ Response:
 }
 ```
 
-### 3. Get Response
+### 3. Lấy Phản hồi
 
 ```bash
 curl http://localhost:8801/v1/responses/resp_7cb437001e1ad5b84b6dd8ef
 ```
 
-### 4. List Input Items
+### 4. Liệt kê Các Mục Nhập
 
 ```bash
 curl http://localhost:8801/v1/responses/resp_7cb437001e1ad5b84b6dd8ef/input_items
 ```
 
-Response:
+Phản hồi:
 
 ```json
 {
@@ -181,13 +181,13 @@ Response:
 }
 ```
 
-### 5. Delete Response
+### 5. Xóa Phản hồi
 
 ```bash
 curl -X DELETE http://localhost:8801/v1/responses/resp_7cb437001e1ad5b84b6dd8ef
 ```
 
-## API Translation
+## Dịch API
 
 | Response API | Chat Completions |
 |--------------|------------------|
@@ -196,6 +196,6 @@ curl -X DELETE http://localhost:8801/v1/responses/resp_7cb437001e1ad5b84b6dd8ef
 | `previous_response_id` | Expanded to full `messages` array |
 | `max_output_tokens` | `max_tokens` |
 
-## Reference
+## Tham chiếu
 
 - [OpenAI Response API](https://platform.openai.com/docs/api-reference/responses)

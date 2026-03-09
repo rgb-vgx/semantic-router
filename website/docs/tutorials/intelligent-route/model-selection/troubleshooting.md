@@ -1,102 +1,102 @@
-# Troubleshooting & FAQ
+# Khắc Phục Sự Cố & Câu Hỏi Thường Gặp
 
-Common issues and frequently asked questions about model selection.
+Các vấn đề phổ biến và các câu hỏi thường gặp về lựa chọn mô hình.
 
-## Frequently Asked Questions
+## Câu Hỏi Thường Gặp
 
-### Which algorithm should I start with?
+### Tôi nên bắt đầu với thuật toán nào?
 
-**Start with Static selection** if you're new to model selection. It's deterministic and easy to debug. Once you understand your traffic patterns, migrate to adaptive algorithms.
+**Bắt đầu với lựa chọn Tĩnh** nếu bạn chưa làm quen với lựa chọn mô hình. Nó mang tính xác định và dễ gỡ lỗi. Khi bạn hiểu các mô hình lưu lượng của mình, hãy chuyển sang các thuật toán thích ứng.
 
-### Do I need to configure all algorithms?
+### Tôi có cần cấu hình tất cả các thuật toán không?
 
-No. Configure only the algorithm you're using. Each algorithm has sensible defaults, so you only need to specify fields you want to customize.
+Không. Chỉ cấu hình thuật toán bạn đang sử dụng. Mỗi thuật toán có các giá trị mặc định hợp lý, vì vậy bạn chỉ cần chỉ định các trường bạn muốn tùy chỉnh.
 
-### Can I switch algorithms without downtime?
+### Tôi có thể chuyển đổi thuật toán mà không ngừng dịch vụ không?
 
-Yes. Algorithm changes take effect on configuration reload. In-flight requests complete with the previous algorithm.
+Có. Các thay đổi thuật toán có hiệu lực khi tải lại cấu hình. Các yêu cầu đang thực hiện hoàn tất bằng thuật toán trước đó.
 
-## Common Issues
+## Vấn Đề Phổ Biến
 
-### Elo Selection
+### Lựa Chọn Elo
 
-**Issue: Ratings not changing**
+**Vấn đề: Xếp hạng không thay đổi**
 
-Possible causes:
+Các nguyên nhân có thể:
 
-1. Feedback not being submitted - verify POST requests to `/api/v1/feedback` return 200
-2. K-factor too low - increase from 32 to 64 for faster adaptation
-3. Not enough traffic - Elo needs consistent feedback volume
+1. Phản hồi chưa được gửi - xác minh các yêu cầu POST đến `/api/v1/feedback` trả về 200
+2. Hệ số K quá thấp - tăng từ 32 lên 64 để thích ứng nhanh hơn
+3. Lưu lượng không đủ - Elo cần lượng phản hồi nhất quán
 
 ```bash
-# Verify feedback endpoint is working
+# Xác minh điểm cuối phản hồi đang hoạt động
 curl -X POST http://localhost:8080/api/v1/feedback \
   -H "Content-Type: application/json" \
   -d '{"request_id": "test", "model": "gpt-4", "rating": 1}'
 ```
 
-**Issue: One model always selected**
+**Vấn đề: Một mô hình luôn được chọn**
 
-This is expected if one model has significantly higher Elo rating. Options:
+Điều này là dự kiến nếu một mô hình có xếp hạng Elo cao hơn đáng kể. Các tùy chọn:
 
-- Reset ratings by deleting `storage_path` file
-- Increase `k_factor` to allow faster rating changes
-- Use `decay_factor` to reduce weight of old comparisons
+- Đặt lại xếp hạng bằng cách xóa tệp `storage_path`
+- Tăng `k_factor` để cho phép thay đổi xếp hạng nhanh hơn
+- Sử dụng `decay_factor` để giảm trọng số của các so sánh cũ
 
-### RouterDC Selection
+### Lựa Chọn RouterDC
 
-**Issue: Wrong model selected for queries**
+**Vấn đề: Chọn sai mô hình cho truy vấn**
 
-1. Check model descriptions are specific enough:
+1. Kiểm tra mô tả mô hình có đủ cụ thể không:
 
 ```yaml
-# Bad - too generic
-description: "A good AI model"
+# Xấu - quá chung chung
+description: "Một mô hình AI tốt"
 
-# Good - specific capabilities
-description: "Mathematical reasoning, theorem proving, step-by-step solutions"
+# Tốt - khả năng cụ thể
+description: "Suy luận toán học, chứng minh định lý, giải quyết vấn đề từng bước"
 ```
 
-2. Verify embeddings are being computed:
+2. Xác minh các nhúng đang được tính:
 
 ```bash
-# Check metrics for embedding latency
+# Kiểm tra số liệu cho độ trễ nhúng
 curl http://localhost:8080/metrics | grep embedding
 ```
 
-**Issue: Startup failure with "missing descriptions"**
+**Vấn đề: Lỗi khởi động với "mô tả bị thiếu"**
 
-If `require_descriptions: true`, all models must have descriptions:
+Nếu `require_descriptions: true`, tất cả các mô hình phải có mô tả:
 
 ```yaml
 models:
   - name: gpt-4
-    description: "Required when require_descriptions is true"
+    description: "Cần thiết khi require_descriptions là true"
 ```
 
-### AutoMix Selection
+### Lựa Chọn AutoMix
 
-**Issue: Always selecting expensive models**
+**Vấn đề: Luôn chọn các mô hình đắt tiền**
 
-Your `cost_quality_tradeoff` is too low (favoring quality). Increase it:
+`Cost_quality_tradeoff` của bạn quá thấp (ưu tiên chất lượng). Tăng nó:
 
 ```yaml
 automix:
-  cost_quality_tradeoff: 0.5  # Balance cost and quality
+  cost_quality_tradeoff: 0.5  # Cân bằng chi phí và chất lượng
 ```
 
-**Issue: Always selecting cheap models**
+**Vấn đề: Luôn chọn các mô hình rẻ**
 
-Your `cost_quality_tradeoff` is too high. Decrease it:
+`Cost_quality_tradeoff` của bạn quá cao. Giảm nó:
 
 ```yaml
 automix:
-  cost_quality_tradeoff: 0.2  # Favor quality
+  cost_quality_tradeoff: 0.2  # Ưu tiên chất lượng
 ```
 
-**Issue: Missing pricing data**
+**Vấn đề: Thiếu dữ liệu giá**
 
-AutoMix requires pricing information:
+AutoMix yêu cầu thông tin giá:
 
 ```yaml
 models:
@@ -106,11 +106,11 @@ models:
       output_cost_per_1k: 0.06
 ```
 
-### Hybrid Selection
+### Lựa Chọn Hybrid
 
-**Issue: Weights validation error**
+**Vấn đề: Lỗi xác thực trọng số**
 
-Weights must sum to 1.0 (±0.01 tolerance):
+Trọng số phải tính đến 1.0 (±0.01 hдопусћ):
 
 ```yaml
 hybrid:
@@ -118,60 +118,60 @@ hybrid:
   router_dc_weight: 0.3
   automix_weight: 0.2
   cost_weight: 0.2
-  # Total: 1.0 ✓
+  # Tổng cộng: 1.0 ✓
 ```
 
-**Issue: Component not contributing**
+**Vấn đề: Thành phần không đóng góp**
 
-Ensure the component has required data:
+Đảm bảo thành phần có dữ liệu cần thiết:
 
-- Elo: needs feedback history
-- RouterDC: needs model descriptions
-- AutoMix: needs pricing data
+- Elo: cần lịch sử phản hồi
+- RouterDC: cần mô tả mô hình
+- AutoMix: cần dữ liệu giá
 
-## Debugging Tips
+## Mẹo Gỡ Lỗi
 
-### Enable verbose logging
+### Bật ghi nhật ký chi tiết
 
 ```yaml
 logging:
   level: debug
 ```
 
-### Check selection metrics
+### Kiểm tra số liệu lựa chọn
 
 ```bash
 curl http://localhost:8080/metrics | grep selection
 ```
 
-Key metrics:
+Các số liệu chính:
 
-- `model_selection_duration_seconds` - selection latency
-- `model_selection_total` - selection counts by algorithm
-- `model_elo_rating` - current Elo ratings (if using Elo)
+- `model_selection_duration_seconds` - độ trễ lựa chọn
+- `model_selection_total` - đếm lựa chọn theo thuật toán
+- `model_elo_rating` - xếp hạng Elo hiện tại (nếu sử dụng Elo)
 
-### Trace individual requests
+### Theo dõi các yêu cầu riêng lẻ
 
-Add request ID header and check logs:
+Thêm tiêu đề ID yêu cầu và kiểm tra nhật ký:
 
 ```bash
 curl -H "X-Request-ID: debug-123" http://localhost:8080/v1/chat/completions ...
 ```
 
-Then search logs:
+Sau đó tìm kiếm nhật ký:
 
 ```bash
 vllm-sr logs router | grep debug-123
 ```
 
-## Getting Help
+## Nhận Trợ Giúp
 
-If you're still stuck:
+Nếu bạn vẫn còn bị mắc kẹt:
 
-1. Check [GitHub Issues](https://github.com/vllm-project/semantic-router/issues) for similar problems
-2. Enable debug logging and capture relevant output
-3. Open a new issue with:
-   - Configuration (redact secrets)
-   - Steps to reproduce
-   - Expected vs actual behavior
-   - Relevant log output
+1. Kiểm tra [GitHub Issues](https://github.com/vllm-project/semantic-router/issues) để có các vấn đề tương tự
+2. Bật ghi nhật ký gỡ lỗi và capture kết quả liên quan
+3. Mở một vấn đề mới với:
+   - Cấu hình (bịdài bí mật)
+   - Các bước để tái tạo
+   - Hành vi dự kiến vs thực tế
+   - Kết quả nhật ký liên quan

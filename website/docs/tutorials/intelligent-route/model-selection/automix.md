@@ -1,50 +1,50 @@
-# AutoMix Selection
+# Lựa Chọn AutoMix
 
-AutoMix optimizes the trade-off between response quality and cost using a cascading approach with self-verification. It starts with cheaper models and escalates to more expensive ones only when confidence is low.
+AutoMix tối ưu hóa sự đánh đổi giữa chất lượng phản hồi và chi phí bằng cách sử dụng cách tiếp cận xếp tầng với xác minh tự động. Nó bắt đầu với các mô hình rẻ hơn và chỉ leo lên các mô hình đắt tiền hơn khi mức độ tin tưởng thấp.
 
-This approach can achieve **>50% cost reduction** while maintaining comparable performance ([AutoMix](https://arxiv.org/abs/2310.12963), Madaan et al., NeurIPS 2024).
+Cách tiếp cận này có thể đạt được **>50% giảm chi phí** trong khi duy trì hiệu suất so sánh ([AutoMix](https://arxiv.org/abs/2310.12963), Madaan et al., NeurIPS 2024).
 
-## Algorithm Flow
+## Luồng Thuật toán
 
 ```mermaid
 flowchart TD
-    A[User Query] --> B[Start with Cheapest Model]
-    B --> C[Get Response]
-    C --> D[Self-Verification:<br/>Evaluate Confidence]
-    D --> E{Confidence Above Threshold?}
-    E -->|Yes| F[Return Response]
-    E -->|No| G{Max Escalations?}
-    G -->|No| H[Select Next Model]
-    H --> I[Route to Larger Model]
+    A[Truy vấn của người dùng] --> B[Bắt đầu với Mô hình Rẻ nhất]
+    B --> C[Lấy phản hồi]
+    C --> D[Xác minh Tự động:<br/>Đánh giá độ tin tưởng]
+    D --> E{Độ tin tưởng trên ngưỡng?}
+    E -->|Có| F[Trả lại phản hồi]
+    E -->|Không| G{Tối đa leo lên?}
+    G -->|Không| H[Chọn mô hình tiếp theo]
+    H --> I[Định tuyến đến mô hình lớn hơn]
     I --> C
-    G -->|Yes| F
-    
+    G -->|Có| F
+
     style D stroke:#000,stroke-width:2px,stroke-dasharray: 5 5
     style H stroke:#000,stroke-width:2px,stroke-dasharray: 5 5
 ```
 
-## How It Works
+## Cách Hoạt Động
 
-1. Query is first sent to the cheapest model in the escalation order
-2. Response is evaluated using **few-shot self-verification** to estimate reliability
-3. If confidence is below threshold, a **POMDP-based meta-verifier** decides whether to escalate
-4. Process repeats until confidence threshold is met or max escalations reached
+1. Truy vấn được gửi lần đầu tiên đến mô hình rẻ nhất theo thứ tự leo lên
+2. Phản hồi được đánh giá bằng cách sử dụng **xác minh tự động kiểu ít chiều** để ước tính độ tin cậy
+3. Nếu độ tin tưởng dưới ngưỡng, **bộ xác minh meta POMDP** quyết định có leo lên hay không
+4. Quá trình lặp lại cho đến khi đạt được ngưỡng độ tin tưởng hoặc tối đa leo lên
 
-### Key Components
+### Thành Phần Chính
 
-- **Few-Shot Self-Verification**: Estimates output reliability without requiring extensive training, using the model's own capabilities to assess answer quality
-- **POMDP Meta-Verifier**: Handles noisy verification signals using a Partially Observable Markov Decision Process to make robust escalation decisions
+- **Xác minh Tự động Kiểu Ít Chiều**: Ước tính độ tin cậy đầu ra mà không cần đào tạo mở rộng, sử dụng khả năng riêng của mô hình để đánh giá chất lượng câu trả lời
+- **Bộ Xác Minh Meta POMDP**: Xử lý các tín hiệu xác minh có tiếng ồn bằng cách sử dụng Quy trình Quyết định Markov Một phần Quan sát để đưa ra quyết định leo lên mạnh mẽ
 
-## Configuration
+## Cấu Hình
 
 ```yaml
 decision:
   algorithm:
     type: automix
     automix:
-      cost_quality_tradeoff: 0.3   # 0=quality only, 1=cost only
-      confidence_threshold: 0.7    # Escalation threshold
-      escalation_order:            # Optional explicit order
+      cost_quality_tradeoff: 0.3   # 0=chất lượng, 1=chi phí
+      confidence_threshold: 0.7    # Ngưỡng leo lên
+      escalation_order:            # Thứ tự tùy chọn rõ ràng
         - gpt-3.5-turbo
         - gpt-4
         - gpt-4-turbo
@@ -72,59 +72,59 @@ models:
       output_cost_per_1k: 0.002
 ```
 
-## Cost-Quality Trade-off
+## Đánh đổi Chi phí-Chất lượng
 
-The `cost_quality_tradeoff` parameter controls the balance:
+Tham số `cost_quality_tradeoff` kiểm soát sự cân bằng:
 
-| Value | Behavior |
-|-------|----------|
-| 0.0 | Always select highest quality model |
-| 0.3 | Prefer quality, consider cost (default) |
-| 0.5 | Balance quality and cost equally |
-| 0.7 | Prefer cheaper models, accept quality trade-off |
-| 1.0 | Always select cheapest model |
+| Giá trị | Hành vi |
+|-------|--------|
+| 0.0 | Luôn chọn mô hình chất lượng cao nhất |
+| 0.3 | Ưu tiên chất lượng, cân nhắc chi phí (mặc định) |
+| 0.5 | Cân bằng chất lượng và chi phí đều nhau |
+| 0.7 | Ưu tiên mô hình rẻ hơn, chấp nhận sự đánh đổi chất lượng |
+| 1.0 | Luôn chọn mô hình rẻ nhất |
 
-## Quality Scores
+## Điểm Chất Lượng
 
-Quality scores should reflect relative model performance (0.0 to 1.0):
+Điểm chất lượng phải phản ánh hiệu suất mô hình tương đối (0,0 đến 1,0):
 
 ```yaml
 models:
   - name: gpt-4
-    quality_score: 0.95   # Excellent
+    quality_score: 0.95   # Xuất sắc
   - name: gpt-3.5-turbo
-    quality_score: 0.75   # Good
+    quality_score: 0.75   # Tốt
   - name: local-llama
-    quality_score: 0.60   # Acceptable
+    quality_score: 0.60   # Chấp nhận được
 ```
 
-### Determining Quality Scores
+### Xác định Điểm Chất Lượng
 
-1. **Benchmark results**: Use standard benchmarks (MMLU, HumanEval, etc.)
-2. **Internal evaluation**: Run on your specific use cases
-3. **User feedback**: Aggregate satisfaction ratings
-4. **Start conservative**: Underestimate, then adjust upward
+1. **Kết quả điểm chuẩn**: Sử dụng điểm chuẩn tiêu chuẩn (MMLU, HumanEval, v.v.)
+2. **Đánh giá nội bộ**: Chạy trên các trường hợp sử dụng cụ thể của bạn
+3. **Phản hồi của người dùng**: Tập hợp các số liệu thỏa mãn
+4. **Bắt đầu bảo thủ**: Đánh giá thấp, sau đó điều chỉnh lên
 
-## Confidence Cascading
+## Xếp tầng Độ tin tưởng
 
-With confidence cascading, AutoMix can start with cheaper models and escalate:
+Với xếp tầng độ tin tưởng, AutoMix có thể bắt đầu với các mô hình rẻ hơn và leo lên:
 
 ```yaml
 automix:
   confidence_method: cascade
   confidence_threshold: 0.7
   escalation_order:
-    - gpt-3.5-turbo   # Try first (cheapest)
-    - gpt-4           # Escalate if confidence low
-    - gpt-4-turbo     # Final escalation
+    - gpt-3.5-turbo   # Thử đầu tiên (rẻ nhất)
+    - gpt-4           # Leo lên nếu độ tin tưởng thấp
+    - gpt-4-turbo     # Leo lên cuối cùng
 ```
 
-The router tries the first model; if response confidence is below threshold, it escalates to the next.
+Bộ định tuyến thử mô hình đầu tiên; nếu độ tin tưởng phản hồi dưới ngưỡng, nó sẽ leo lên mô hình tiếp theo.
 
-## Best Practices
+## Các Thực Hành Tốt Nhất
 
-1. **Accurate pricing**: Keep pricing data up-to-date
-2. **Calibrate quality scores**: Base on actual performance metrics
-3. **Start conservative**: Begin with lower trade-off (prefer quality)
-4. **Monitor costs**: Track actual cost savings vs. quality impact
-5. **A/B test**: Compare AutoMix against static routing
+1. **Giá cả chính xác**: Giữ dữ liệu giá cả cập nhật
+2. **Hiệu chỉnh điểm chất lượng**: Dựa trên các chỉ số hiệu suất thực tế
+3. **Bắt đầu bảo thủ**: Bắt đầu với sự đánh đổi thấp hơn (ưu tiên chất lượng)
+4. **Giám sát chi phí**: Theo dõi tiết kiệm chi phí thực tế so với tác động chất lượng
+5. **Thử nghiệm A/B**: So sánh AutoMix với định tuyến tĩnh
