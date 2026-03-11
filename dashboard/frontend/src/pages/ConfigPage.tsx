@@ -9,6 +9,7 @@ import EndpointsEditor, { Endpoint } from '../components/EndpointsEditor'
 import RoutingPresetModal from '../components/RoutingPresetModal'
 import { useReadonly } from '../contexts/ReadonlyContext'
 import ConfigPageRouterConfigSection from './ConfigPageRouterConfigSection'
+import ConfigPageManagerLayout from './ConfigPageManagerLayout'
 import {
   getRoutingPreset,
   listDecisionNames,
@@ -32,8 +33,7 @@ import {
   DecisionConfig,
   DecisionFormState,
   formatThreshold,
-  ModelConfigEntry,
-  NormalizedModel,
+  ModelConfigEntry, NormalizedModel, normalizeEndpoint, normalizeEndpoints,
   ReasoningFamily,
   SignalType,
   TABLE_COLUMN_WIDTH,
@@ -430,7 +430,7 @@ const ConfigPage: React.FC<ConfigPageProps> = ({ activeSection = 'models' }) => 
         const model: NormalizedModel = {
           name: m.name,
           reasoning_family: m.reasoning_family,
-          endpoints: m.endpoints || [],
+          endpoints: normalizeEndpoints(m.endpoints),
           access_key: m.access_key,
           pricing: m.pricing,
         }
@@ -444,12 +444,12 @@ const ConfigPage: React.FC<ConfigPageProps> = ({ activeSection = 'models' }) => 
         reasoning_family: cfg.reasoning_family,
         endpoints: cfg.preferred_endpoints?.map((ep: string) => {
           const endpoint = config.vllm_endpoints?.find((e: VLLMEndpoint) => e.name === ep)
-          return endpoint ? {
+          return endpoint ? normalizeEndpoint({
             name: ep,
             weight: endpoint.weight || 1,
             endpoint: `${endpoint.address}:${endpoint.port}`,
             protocol: 'http',
-          } : null
+          }, 0) : null
         }).filter((e): e is NonNullable<typeof e> => e !== null) || [],
         access_key: undefined,
         pricing: cfg.pricing
@@ -1527,38 +1527,31 @@ const ConfigPage: React.FC<ConfigPageProps> = ({ activeSection = 'models' }) => 
     }
 
     return (
-      <div className={styles.sectionPanel}>
-        <div className={styles.sectionTableBlock}>
-          <TableHeader
-            title="Signals"
-            count={allSignals.length}
-            searchPlaceholder="Search signals..."
-            searchValue={signalsSearch}
-            onSearchChange={setSignalsSearch}
-            onAdd={() => openSignalEditor('add')}
-            addButtonText="Add Signal"
-            disabled={isReadonly}
-          />
-
-          {(isPythonCLI || hasFlatSignals(config)) ? (
-            <DataTable
-              columns={signalsColumns}
-              data={filteredSignals}
-              keyExtractor={(row) => `${row.type}-${row.name}`}
-              onView={handleViewSignal}
-              onEdit={handleEditSignal}
-              onDelete={handleDeleteSignal}
-              emptyMessage={signalsSearch ? 'No signals match your search' : 'No signals configured'}
-              readonly={isReadonly}
-            />
-          ) : (
-            <div className={styles.emptyState}>
-              Signals are only available in Python CLI config format.
-              Current config uses legacy format - use "Intelligent Routing" features instead.
-            </div>
-          )}
+      <ConfigPageManagerLayout title="Signals" description="Review the signal catalog that drives semantic routing, guardrails, and context-aware behavior.">
+        <div className={styles.sectionPanel}>
+          <div className={styles.sectionTableBlock}>
+            <TableHeader title="Signals" count={allSignals.length} searchPlaceholder="Search signals..." searchValue={signalsSearch} onSearchChange={setSignalsSearch} onAdd={() => openSignalEditor('add')} addButtonText="Add Signal" disabled={isReadonly} variant="embedded" />
+            {(isPythonCLI || hasFlatSignals(config)) ? (
+              <DataTable
+                columns={signalsColumns}
+                data={filteredSignals}
+                keyExtractor={(row) => `${row.type}-${row.name}`}
+                onView={handleViewSignal}
+                onEdit={handleEditSignal}
+                onDelete={handleDeleteSignal}
+                emptyMessage={signalsSearch ? 'No signals match your search' : 'No signals configured'}
+                className={styles.managerTable}
+                readonly={isReadonly}
+              />
+            ) : (
+              <div className={styles.emptyState}>
+                Signals are only available in Python CLI config format.
+                Current config uses legacy format - use "Intelligent Routing" features instead.
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </ConfigPageManagerLayout>
     )
   }
 
@@ -2169,47 +2162,48 @@ const ConfigPage: React.FC<ConfigPageProps> = ({ activeSection = 'models' }) => 
     }
 
     return (
-      <div className={styles.sectionPanel}>
-        <div className={styles.sectionTableBlock}>
-          <TableHeader
-            title="Routing Decisions"
-            count={decisions.length}
-            searchPlaceholder="Search decisions..."
-            searchValue={decisionsSearch}
-            onSearchChange={setDecisionsSearch}
-            onSecondaryAction={
-              isPythonCLI && config?.providers?.default_model
-                ? () => {
-                    setPresetApplyError(null)
-                    setPresetModalOpen(true)
-                  }
-                : undefined
-            }
-            secondaryActionText="Apply preset"
-            onAdd={() => openDecisionEditor('add')}
-            addButtonText="Add Decision"
-            disabled={isReadonly}
-          />
-
-          {(isPythonCLI || hasDecisions(config)) ? (
-            <DataTable
-              columns={decisionsColumns}
-              data={filteredDecisions}
-              keyExtractor={(row) => row.name}
-              onView={handleViewDecision}
-              onEdit={handleEditDecision}
-              onDelete={handleDeleteDecision}
-              emptyMessage={decisionsSearch ? 'No decisions match your search' : 'No routing decisions configured'}
-              readonly={isReadonly}
+      <ConfigPageManagerLayout title="Decisions" description="Shape routing outcomes with ordered rules, plugins, and presets that map signals to concrete model behavior.">
+        <div className={styles.sectionPanel}>
+          <div className={styles.sectionTableBlock}>
+            <TableHeader
+              title="Routing Decisions"
+              count={decisions.length}
+              searchPlaceholder="Search decisions..."
+              searchValue={decisionsSearch}
+              onSearchChange={setDecisionsSearch}
+              onSecondaryAction={
+                isPythonCLI && config?.providers?.default_model
+                  ? () => {
+                      setPresetApplyError(null)
+                      setPresetModalOpen(true)
+                    }
+                  : undefined
+              }
+              secondaryActionText="Apply preset"
+              onAdd={() => openDecisionEditor('add')}
+              addButtonText="Add Decision" disabled={isReadonly} variant="embedded"
             />
-          ) : (
-            <div className={styles.emptyState}>
-              Decisions are only available in Python CLI config format.
-              Current config uses legacy format - see "Categories" in legacy mode.
-            </div>
-          )}
+            {(isPythonCLI || hasDecisions(config)) ? (
+              <DataTable
+                columns={decisionsColumns}
+                data={filteredDecisions}
+                keyExtractor={(row) => row.name}
+                onView={handleViewDecision}
+                onEdit={handleEditDecision}
+                onDelete={handleDeleteDecision}
+                emptyMessage={decisionsSearch ? 'No decisions match your search' : 'No routing decisions configured'}
+                className={styles.managerTable}
+                readonly={isReadonly}
+              />
+            ) : (
+              <div className={styles.emptyState}>
+                Decisions are only available in Python CLI config format.
+                Current config uses legacy format - see "Categories" in legacy mode.
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </ConfigPageManagerLayout>
     )
   }
 
@@ -2331,7 +2325,7 @@ const ConfigPage: React.FC<ConfigPageProps> = ({ activeSection = 'models' }) => 
                       fontWeight: 600,
                       textTransform: 'uppercase'
                     }}>
-                      {ep.protocol || 'http'}
+                      {ep.protocol}
                     </span>
                   </td>
                   <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', fontSize: '0.875rem', fontFamily: 'var(--font-mono)' }}>
@@ -2526,7 +2520,7 @@ const ConfigPage: React.FC<ConfigPageProps> = ({ activeSection = 'models' }) => 
         ],
         async (data) => {
           // Endpoints are already validated by EndpointsEditor
-          const endpoints = data.endpoints || []
+          const endpoints = normalizeEndpoints(data.endpoints)
 
           const newConfig = { ...config }
 
@@ -2580,7 +2574,7 @@ const ConfigPage: React.FC<ConfigPageProps> = ({ activeSection = 'models' }) => 
           reasoning_family: model.reasoning_family || '',
           access_key: model.access_key || '',
           // Endpoints
-          endpoints: model.endpoints || [],
+          endpoints: normalizeEndpoints(model.endpoints),
           // Pricing
           currency: model.pricing?.currency || 'USD',
           prompt_per_1m: model.pricing?.prompt_per_1m || 0,
@@ -2636,7 +2630,7 @@ const ConfigPage: React.FC<ConfigPageProps> = ({ activeSection = 'models' }) => 
           const newConfig = { ...config }
 
           // Endpoints are already validated by EndpointsEditor
-          const endpoints = data.endpoints || []
+          const endpoints = normalizeEndpoints(data.endpoints)
 
           if (isPythonCLI && newConfig.providers?.models) {
             newConfig.providers = { ...newConfig.providers }
@@ -2878,59 +2872,42 @@ const ConfigPage: React.FC<ConfigPageProps> = ({ activeSection = 'models' }) => 
     ]
 
     return (
-      <div className={styles.sectionPanel}>
-        <div className={styles.sectionTableBlock}>
-          <TableHeader
-            title="Reasoning Families"
-            count={reasoningFamilyData.length}
-            searchPlaceholder=""
-            searchValue=""
-            onSearchChange={() => { }}
-            onAdd={handleAddReasoningFamily}
-            addButtonText="Add Family"
-            disabled={isReadonly}
-          />
-
-          <DataTable
-            columns={reasoningFamilyColumns}
-            data={reasoningFamilyData}
-            keyExtractor={(row) => row.name}
-            onView={(row) => handleViewReasoningFamily(row.name)}
-            onEdit={(row) => handleEditReasoningFamily(row.name)}
-            onDelete={(row) => handleDeleteReasoningFamily(row.name)}
-            emptyMessage="No reasoning families configured"
-            readonly={isReadonly}
-          />
+      <ConfigPageManagerLayout title="Models" description="Manage provider models, reasoning families, and the endpoint inventory available to routing decisions.">
+        <div className={styles.sectionPanel}>
+          <div className={styles.sectionTableBlock}>
+            <TableHeader title="Reasoning Families" count={reasoningFamilyData.length} onAdd={handleAddReasoningFamily} addButtonText="Add Family" disabled={isReadonly} variant="embedded" />
+            <DataTable
+              columns={reasoningFamilyColumns}
+              data={reasoningFamilyData}
+              keyExtractor={(row) => row.name}
+              onView={(row) => handleViewReasoningFamily(row.name)}
+              onEdit={(row) => handleEditReasoningFamily(row.name)}
+              onDelete={(row) => handleDeleteReasoningFamily(row.name)}
+              emptyMessage="No reasoning families configured"
+              className={styles.managerTable}
+              readonly={isReadonly}
+            />
+          </div>
+          <div className={styles.sectionTableBlock}>
+            <TableHeader title="Models" count={models.length} searchPlaceholder="Search models..." searchValue={modelsSearch} onSearchChange={setModelsSearch} onAdd={handleAddModel} addButtonText="Add Model" disabled={isReadonly} variant="embedded" />
+            <DataTable
+              columns={modelColumns}
+              data={filteredModels}
+              keyExtractor={(row) => row.name}
+              onView={handleViewModel}
+              onEdit={handleEditModel}
+              onDelete={handleDeleteModel}
+              expandable={true}
+              renderExpandedRow={renderModelEndpoints}
+              isRowExpanded={(row) => expandedModels.has(row.name)}
+              onToggleExpand={handleToggleExpand}
+              emptyMessage={modelsSearch ? 'No models match your search' : 'No models configured'}
+              className={styles.managerTable}
+              readonly={isReadonly}
+            />
+          </div>
         </div>
-
-        <div className={styles.sectionTableBlock}>
-          <TableHeader
-            title="Models"
-            count={models.length}
-            searchPlaceholder="Search models..."
-            searchValue={modelsSearch}
-            onSearchChange={setModelsSearch}
-            onAdd={handleAddModel}
-            addButtonText="Add Model"
-            disabled={isReadonly}
-          />
-
-          <DataTable
-            columns={modelColumns}
-            data={filteredModels}
-            keyExtractor={(row) => row.name}
-            onView={handleViewModel}
-            onEdit={handleEditModel}
-            onDelete={handleDeleteModel}
-            expandable={true}
-            renderExpandedRow={renderModelEndpoints}
-            isRowExpanded={(row) => expandedModels.has(row.name)}
-            onToggleExpand={handleToggleExpand}
-            emptyMessage={modelsSearch ? 'No models match your search' : 'No models configured'}
-            readonly={isReadonly}
-          />
-        </div>
-      </div>
+      </ConfigPageManagerLayout>
     )
   }
 
