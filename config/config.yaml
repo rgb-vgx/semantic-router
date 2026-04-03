@@ -1576,6 +1576,12 @@ global:
         mmbert_model_path: models/mom-embedding-ultra
         multimodal_model_path: models/mom-embedding-multimodal
         bert_model_path: models/mom-embedding-light
+        # Remote Qwen3-Embedding-4B via OpenAI-compatible API (optional)
+        # remote_embedding:
+        #   url: "https://llm-xxxx.xxxx.vn/v1/embeddings"
+        #   api_key: "sk-your-api-key"
+        #   model: "Qwen3-Embedding-4B"
+        #   timeout_seconds: 30
         use_cpu: true
         embedding_config:
           model_type: mmbert
