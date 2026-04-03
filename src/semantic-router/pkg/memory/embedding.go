@@ -5,17 +5,19 @@ import (
 	"strings"
 
 	candle_binding "github.com/vllm-project/semantic-router/candle-binding"
+	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/remoteembed"
 )
 
 // EmbeddingModelType represents supported embedding model types
 type EmbeddingModelType string
 
 const (
-	EmbeddingModelBERT   EmbeddingModelType = "bert"
-	EmbeddingModelMMBERT EmbeddingModelType = "mmbert"
-	EmbeddingModelMulti  EmbeddingModelType = "multimodal"
-	EmbeddingModelQwen3  EmbeddingModelType = "qwen3"
-	EmbeddingModelGemma  EmbeddingModelType = "gemma"
+	EmbeddingModelBERT     EmbeddingModelType = "bert"
+	EmbeddingModelMMBERT   EmbeddingModelType = "mmbert"
+	EmbeddingModelMulti    EmbeddingModelType = "multimodal"
+	EmbeddingModelQwen3    EmbeddingModelType = "qwen3"
+	EmbeddingModelGemma    EmbeddingModelType = "gemma"
+	EmbeddingModelQwen3_4B EmbeddingModelType = "qwen3-4b"
 )
 
 // EmbeddingConfig holds the embedding model configuration
@@ -71,6 +73,14 @@ func GenerateEmbedding(text string, cfg EmbeddingConfig) ([]float32, error) {
 		}
 		return output.Embedding, nil
 
+	case "qwen3-4b":
+		// Use remote API for Qwen3-Embedding-4B
+		embedding, err := remoteembed.GetEmbedding(text)
+		if err != nil {
+			return nil, fmt.Errorf("qwen3-4b remote embedding failed: %w", err)
+		}
+		return embedding, nil
+
 	case "bert", "":
 		// Use traditional GetEmbedding for BERT (default)
 		embedding, err := candle_binding.GetEmbedding(text, 0)
@@ -80,6 +90,6 @@ func GenerateEmbedding(text string, cfg EmbeddingConfig) ([]float32, error) {
 		return embedding, nil
 
 	default:
-		return nil, fmt.Errorf("unsupported embedding model: %s (must be 'bert', 'qwen3', 'gemma', 'mmbert', or 'multimodal')", modelName)
+		return nil, fmt.Errorf("unsupported embedding model: %s (must be 'bert', 'qwen3', 'qwen3-4b', 'gemma', 'mmbert', or 'multimodal')", modelName)
 	}
 }

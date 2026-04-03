@@ -8,6 +8,7 @@ import (
 
 	candle_binding "github.com/vllm-project/semantic-router/candle-binding"
 	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/observability/logging"
+	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/remoteembed"
 )
 
 // handleEmbeddings handles embedding generation requests
@@ -82,6 +83,17 @@ func (s *ClassificationAPIServer) handleEmbeddings(w http.ResponseWriter, r *htt
 				req.TargetLayer,
 				req.Dimension,
 			)
+		case "qwen3-4b":
+			// Remote API for Qwen3-Embedding-4B
+			emb, remoteErr := remoteembed.GetEmbedding(text)
+			if remoteErr != nil {
+				err = remoteErr
+			} else {
+				output = &candle_binding.EmbeddingOutput{
+					Embedding: emb,
+					ModelType: "qwen3-4b",
+				}
+			}
 		default:
 			// Manual model selection ("qwen3" or "gemma")
 			output, err = candle_binding.GetEmbeddingWithModelType(

@@ -20,6 +20,7 @@ import (
 	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/observability/logging"
 	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/observability/metrics"
 	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/observability/tracing"
+	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/remoteembed"
 	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/startupstatus"
 	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/vectorstore"
 )
@@ -294,6 +295,9 @@ func initializeEmbeddingModels(cfg *config.RouterConfig) bool {
 	if initializeMultiModalEmbeddingModelIfConfigured(cfg, paths.multiModal) {
 		initialized = true
 	}
+	if initializeRemoteEmbeddingIfConfigured(cfg) {
+		initialized = true
+	}
 	return initialized
 }
 
@@ -337,6 +341,29 @@ func initializeUnifiedEmbeddingModels(cfg *config.RouterConfig, paths embeddingP
 
 	logging.ComponentEvent("router", "embedding_models_initialized", map[string]interface{}{
 		"use_batched": useBatched,
+	})
+	return true
+}
+
+func initializeRemoteEmbeddingIfConfigured(cfg *config.RouterConfig) bool {
+	rc := cfg.EmbeddingModels.RemoteEmbedding
+	if rc == nil || rc.URL == "" {
+		return false
+	}
+	if err := remoteembed.Init(remoteembed.Config{
+		URL:            rc.URL,
+		APIKey:         rc.APIKey,
+		Model:          rc.Model,
+		TimeoutSeconds: rc.TimeoutSeconds,
+	}); err != nil {
+		logging.ComponentWarnEvent("router", "remote_embedding_init_failed", map[string]interface{}{
+			"error": err.Error(),
+		})
+		return false
+	}
+	logging.ComponentEvent("router", "remote_embedding_initialized", map[string]interface{}{
+		"url":   rc.URL,
+		"model": rc.Model,
 	})
 	return true
 }

@@ -32,14 +32,23 @@ type PIIModel struct {
 	PIIMappingPath string  `yaml:"pii_mapping_path"`
 }
 
+// RemoteEmbeddingConfig configures an external OpenAI-compatible embedding API.
+type RemoteEmbeddingConfig struct {
+	URL            string `yaml:"url"`
+	APIKey         string `yaml:"api_key"`
+	Model          string `yaml:"model"`
+	TimeoutSeconds int    `yaml:"timeout_seconds,omitempty"`
+}
+
 type EmbeddingModels struct {
-	Qwen3ModelPath      string     `yaml:"qwen3_model_path"`
-	GemmaModelPath      string     `yaml:"gemma_model_path"`
-	MmBertModelPath     string     `yaml:"mmbert_model_path"`
-	MultiModalModelPath string     `yaml:"multimodal_model_path,omitempty"`
-	BertModelPath       string     `yaml:"bert_model_path"`
-	UseCPU              bool       `yaml:"use_cpu"`
-	EmbeddingConfig     HNSWConfig `yaml:"embedding_config,omitempty"`
+	Qwen3ModelPath      string                 `yaml:"qwen3_model_path"`
+	GemmaModelPath      string                 `yaml:"gemma_model_path"`
+	MmBertModelPath     string                 `yaml:"mmbert_model_path"`
+	MultiModalModelPath string                 `yaml:"multimodal_model_path,omitempty"`
+	BertModelPath       string                 `yaml:"bert_model_path"`
+	RemoteEmbedding     *RemoteEmbeddingConfig `yaml:"remote_embedding,omitempty"`
+	UseCPU              bool                   `yaml:"use_cpu"`
+	EmbeddingConfig     HNSWConfig             `yaml:"embedding_config,omitempty"`
 }
 
 func (e EmbeddingModels) MinSimilarityThreshold() float32 {

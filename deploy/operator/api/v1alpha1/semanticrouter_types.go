@@ -1073,16 +1073,37 @@ type EmbeddingModelsConfig struct {
 	// +optional
 	UseCPU bool `json:"use_cpu,omitempty"`
 
+	// Remote embedding configuration for calling an external OpenAI-compatible API (e.g., Qwen3-Embedding-4B)
+	// +optional
+	RemoteEmbedding *RemoteEmbeddingConfig `json:"remote_embedding,omitempty"`
+
 	// Embedding configuration for embedding-based classification
 	// +optional
 	EmbeddingConfig *HNSWEmbeddingConfig `json:"embedding_config,omitempty"`
 }
 
+// RemoteEmbeddingConfig configures a remote OpenAI-compatible embedding API (e.g., Qwen3-Embedding-4B).
+type RemoteEmbeddingConfig struct {
+	// URL is the endpoint for the embedding API (e.g., "https://llm-xxxx.xxxx.vn/v1/embeddings")
+	URL string `json:"url"`
+
+	// APIKey is the bearer token for authentication
+	// +optional
+	APIKey string `json:"api_key,omitempty"`
+
+	// Model is the model name to send in the API request (e.g., "Qwen3-Embedding-4B")
+	Model string `json:"model"`
+
+	// TimeoutSeconds is the HTTP request timeout (default: 30)
+	// +optional
+	TimeoutSeconds int `json:"timeout_seconds,omitempty"`
+}
+
 // HNSWEmbeddingConfig contains settings for embedding classification with HNSW indexing
 type HNSWEmbeddingConfig struct {
 	// ModelType specifies which embedding model to use
-	// Options: "qwen3" (1024-dim, 32K context), "gemma" (768-dim, 8K context), "mmbert" (64-768-dim, multilingual)
-	// +kubebuilder:validation:Enum=qwen3;gemma;mmbert
+	// Options: "qwen3" (1024-dim, 32K context), "qwen3-4b" (1024-dim, remote API), "gemma" (768-dim, 8K context), "mmbert" (64-768-dim, multilingual)
+	// +kubebuilder:validation:Enum=qwen3;qwen3-4b;gemma;mmbert
 	// +optional
 	ModelType string `json:"model_type,omitempty"`
 

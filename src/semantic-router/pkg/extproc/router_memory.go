@@ -146,6 +146,9 @@ func detectMemoryEmbeddingModel(cfg *config.RouterConfig) string {
 	case embeddingModels.MultiModalModelPath != "":
 		logging.Infof("Memory: Auto-selected multimodal from embedding_models config")
 		return "multimodal"
+	case embeddingModels.RemoteEmbedding != nil && embeddingModels.RemoteEmbedding.URL != "":
+		logging.Infof("Memory: Auto-selected qwen3-4b (remote) from embedding_models config")
+		return "qwen3-4b"
 	case embeddingModels.Qwen3ModelPath != "":
 		logging.Infof("Memory: Auto-selected qwen3 from embedding_models config")
 		return "qwen3"

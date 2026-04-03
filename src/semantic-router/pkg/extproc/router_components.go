@@ -100,6 +100,8 @@ func detectSemanticCacheEmbeddingModel(cfg *config.RouterConfig) string {
 		return "mmbert"
 	case embeddingModels.MultiModalModelPath != "":
 		return "multimodal"
+	case embeddingModels.RemoteEmbedding != nil && embeddingModels.RemoteEmbedding.URL != "":
+		return "qwen3-4b"
 	case embeddingModels.Qwen3ModelPath != "":
 		return "qwen3"
 	case embeddingModels.GemmaModelPath != "":
